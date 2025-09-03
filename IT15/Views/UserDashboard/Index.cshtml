@@ -1,0 +1,39 @@
+﻿@{
+    ViewData["Title"] = "My Dashboard";
+    // This will use the main layout file at /Views/Shared/_Layout.cshtml
+    Layout = "_Layout";
+}
+
+<div class="container mx-auto p-6">
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Welcome, @User.Identity.Name!</h1>
+                <p class="text-gray-500 mt-1">This is your personal dashboard.</p>
+            </div>
+            <!-- Logout Button -->
+            <form asp-controller="UserDashboard" asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                    Logout
+                </button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <!-- Card 1: My Profile -->
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-700">My Profile</h3>
+                <p class="text-gray-600 mt-2">View and update your personal information.</p>
+                <a href="#" class="text-blue-600 hover:underline mt-4 inline-block">Go to Profile &rarr;</a>
+            </div>
+
+            <!-- Card 2: Submit Leave Request -->
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-700">Leave Requests</h3>
+                <p class="text-gray-600 mt-2">Submit a new leave request or check the status of existing ones.</p>
+                <a href="#" class="text-blue-600 hover:underline mt-4 inline-block">Manage Leave &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
