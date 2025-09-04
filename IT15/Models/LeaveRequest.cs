@@ -18,10 +18,9 @@ namespace IT15.Models
 
         // --- User and Approval Info ---
 
-        // We remove [Required] because the controller sets this ID, not the form.
-        public string RequestingEmployeeId { get; set; }
+        // THE FIX: Make the string property nullable to remove the implicit [Required] attribute.
+        public string? RequestingEmployeeId { get; set; }
         [ForeignKey("RequestingEmployeeId")]
-        // We make the navigation property nullable ('?') to prevent validation errors.
         public IdentityUser? RequestingEmployee { get; set; }
 
         public string? ApprovedById { get; set; }
@@ -57,4 +56,6 @@ namespace IT15.Models
         public LeaveRequestStatus Status { get; set; }
     }
 }
+
+
 
