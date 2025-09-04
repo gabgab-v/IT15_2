@@ -1,15 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace OpenBookHRIS.Web.Areas.Admin.Controllers
+// IMPORTANT: The namespace must match your project and folder structure.
+namespace IT15.Areas.Admin.Controllers
 {
+    // Designate this controller as part of the "Admin" area.
     [Area("Admin")]
-    [Authorize(Roles = "Admin")] // This ensures only logged-in users can access the dashboard
+    // Secure this controller so only users with the "Admin" role can access it.
+    [Authorize(Roles = "Admin")]
     public class DashboardController : Controller
     {
+        // This action handles requests to /Admin/Dashboard or /Admin/Dashboard/Index
         public IActionResult Index()
         {
+            // This tells the application to render the corresponding view.
             return View();
         }
     }
 }
+

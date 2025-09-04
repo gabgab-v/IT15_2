@@ -17,11 +17,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Use the Inter font family defined above */
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar for a cleaner look */
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -55,7 +54,7 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 px-4 py-4 space-y-2">
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium bg-blue-50 text-blue-600 rounded-lg">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium bg-blue-50 text-blue-600 rounded-lg">
                     <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
                     Dashboard
                 </a>
@@ -63,52 +62,23 @@
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                     Manage Employees
                 </a>
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
-                    Leave Requests
-                </a>
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <i data-lucide="book-open" class="w-5 h-5 mr-3"></i>
-                    Daily Log
-                </a>
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>
-                    Attendance Report
-                </a>
-
-                <!--
-                    ROLE-BASED ACCESS CONTROL EXAMPLE:
-                    Wrap admin-only links in an if-statement.
-                    This checks if the currently logged-in user has the "Admin" role.
-                    An employee without this role will not see these links.
-                -->
-                @if (User.IsInRole("Admin"))
-                {
-                    <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                        <i data-lucide="landmark" class="w-5 h-5 mr-3"></i>
-                        Payroll
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                        <i data-lucide="shield" class="w-5 h-5 mr-3"></i>
-                        User Roles
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                        <i data-lucide="history" class="w-5 h-5 mr-3"></i>
-                        Audit Log
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                        <i data-lucide="building-2" class="w-5 h-5 mr-3"></i>
-                        Departments
-                    </a>
-                }
+                <!-- ... other admin links ... -->
             </nav>
 
-            <!-- Profile section at the bottom -->
-            <div class="p-4 border-t border-gray-200">
+            <!-- Profile and Logout section at the bottom -->
+            <div class="p-4 border-t border-gray-200 space-y-2">
                 <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
                     <i data-lucide="user-circle" class="w-5 h-5 mr-3"></i>
                     Profile
                 </a>
+                <!-- LOGOUT BUTTON FORM -->
+                <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="w-full flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                        <i data-lucide="log-out" class="w-5 h-5 mr-3"></i>
+                        <span>Logout</span>
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -117,10 +87,11 @@
             <!-- Header -->
             <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
                 <div>
-                    <h1 class="text-xl font-semibold text-gray-800">Welcome Back, @(User.Identity.Name ?? "Administrator")!</h1>
+                    <h1 class="text-xl font-semibold text-gray-800">@ViewData["Title"]</h1>
                 </div>
                 <div class="flex items-center">
-                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <span class="mr-3 text-sm font-medium text-gray-700">@(User.Identity.Name)</span>
+                    <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         AD
                     </div>
                 </div>

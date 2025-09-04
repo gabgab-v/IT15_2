@@ -1,32 +1,45 @@
-﻿    @model IEnumerable<IT15.Models.DailyLog>
+﻿@model IEnumerable<IT15.Models.DailyLog>
 
 @{
-    ViewData["Title"] = "My Daily Logs";
+    ViewData["Title"] = "My Attendance Logs";
+    var hasLoggedToday = Model.Any(log => log.Date == DateTime.Today);
 }
 
 <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-semibold text-gray-800">Daily Log Entries</h2>
-    <a asp-action="AddDailyLog" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
-        Add New Log
-    </a>
+    <h2 class="text-2xl font-semibold text-gray-800">My Attendance</h2>
+
+    @if (hasLoggedToday)
+    {
+        <button class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg cursor-not-allowed" disabled>
+            Attendance Logged for Today
+        </button>
+    }
+    else
+    {
+        <form asp-action="LogAttendance" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                Log My Attendance for Today
+            </button>
+        </form>
+    }
 </div>
 
 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
     @if (Model.Any())
     {
-        <ul class="space-y-4">
+        <ul class="divide-y divide-gray-200">
             @foreach (var log in Model)
             {
-                <li class="border-b border-gray-200 pb-3">
-                    <p class="font-semibold text-gray-700">@log.Date.ToString("MMMM dd, yyyy")</p>
-                    <p class="text-gray-600 mt-1">@log.LogContent</p>
+                <li class="py-3">
+                    <p class="font-medium text-gray-800">@log.Date.ToString("dddd, MMMM dd, yyyy")</p>
                 </li>
             }
         </ul>
     }
     else
     {
-        <p class="text-gray-500">You have not created any daily logs yet.</p>
+        <p class="text-gray-500">You have no attendance records yet.</p>
     }
 </div>
 

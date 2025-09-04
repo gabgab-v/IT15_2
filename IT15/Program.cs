@@ -1,8 +1,6 @@
 using IT15.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using YourProjectName.Data;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +13,9 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // This tells the cookie authentication handler where to redirect unauthorized requests.
-    // We are checking the request path. If it starts with /Admin, send them to the admin login page.
-    // Otherwise, send them to the default Identity/Account/Login page.
     options.Events.OnRedirectToLogin = context =>
     {
         if (context.Request.Path.StartsWithSegments("/Admin"))
@@ -39,52 +33,55 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Seed the database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var configuration = services.GetRequiredService<IConfiguration>();
-        // Call the Initialize method from your SeedData class
-        await SeedData.Initialize(services, configuration);
+        // Ensure you have a SeedData class with an Initialize method
+        // await SeedData.Initialize(services, configuration);
     }
     catch (Exception ex)
     {
-        // Log any errors that occur during seeding
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
 
-
 // Configure the HTTP request pipeline.
+// THIS IS THE MOST IMPORTANT SECTION FOR DEBUGGING
 if (app.Environment.IsDevelopment())
 {
+    // This will replace the "page not exist" error with a detailed error report.
+    app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
 }
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// The order of these three lines is CRITICAL for routing and security to work.
 app.UseRouting();
-
+app.UseAuthentication(); // <-- This was likely missing and is required.
 app.UseAuthorization();
 
 app.MapControllerRoute(
-    name: "Admin",
+    name: "AdminArea", // Renamed for clarity
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-
 app.MapRazorPages();
 
 app.Run();
+

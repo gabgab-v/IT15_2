@@ -1,96 +1,73 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using IT15.Areas.Admin.ViewModels;
+using Microsoft.Extensions.Logging; // Required for logging
 
-// Define the namespace to match your project structure
-namespace YourProjectName.Areas.Admin.Controllers // <-- IMPORTANT: Change YourProjectName
+namespace IT15.Areas.Admin.Controllers
 {
-    // Designate this controller as part of the "Admin" area
     [Area("Admin")]
     public class AccountController : Controller
     {
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ILogger<AccountController> _logger;
 
-        // Constructor to inject Identity services
         public AccountController(SignInManager<IdentityUser> signInManager, ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _logger = logger;
         }
 
-        // A model to hold the data from the login form
-        public class LoginInputModel
-        {
-            [Required]
-            [EmailAddress]
-            public string Email { get; set; }
-
-            [Required]
-            [DataType(DataType.Password)]
-            public string Password { get; set; }
-
-            [Display(Name = "Remember me?")]
-            public bool RememberMe { get; set; }
-        }
-
-        // GET Action: /Admin/Account/Login
-        // This method displays the login form.
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Login(string returnUrl = null)
         {
-            // If the user is already authenticated, redirect them to the admin dashboard
-            if (User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Index", "Dashboard");
-            }
-
+            _logger.LogInformation("GET Login page requested.");
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
-        // POST Action: /Admin/Account/Login
-        // This method processes the submitted login form.
         [HttpPost]
+        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginInputModel input, string returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
-            // Set a default redirect URL if one isn't provided
-            returnUrl ??= Url.Action("Index", "Dashboard");
+            // ADDED LOGGING: This message will appear in your console if the route is found.
+            _logger.LogInformation("POST Login action initiated.");
+
+            returnUrl ??= Url.Action("Index", "Dashboard", new { area = "Admin" });
 
             if (ModelState.IsValid)
             {
-                // Attempt to sign the user in using their password.
-                // The last parameter `lockoutOnFailure` is set to false to prevent account lockouts from this form.
-                var result = await _signInManager.PasswordSignInAsync(input.Email, input.Password, input.RememberMe, lockoutOnFailure: false);
-
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("Admin user logged in.");
+                    _logger.LogInformation("User logged in successfully.");
                     return LocalRedirect(returnUrl);
                 }
                 else
                 {
-                    // If login fails, add an error message and redisplay the form.
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt. Please check your email and password.");
-                    return View(input);
+                    // ADDED LOGGING
+                    _logger.LogWarning("Invalid login attempt for user {Email}", model.Email);
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    return View(model);
                 }
             }
 
-            // If the model state is invalid, redisplay the form with validation errors.
-            return View(input);
+            // ADDED LOGGING: This will run if the model state is invalid (e.g., empty fields)
+            _logger.LogWarning("Login failed due to invalid model state.");
+            return View(model);
         }
 
-        // POST Action: /Admin/Account/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out.");
-            // Redirect to the admin login page after logging out
-            return RedirectToAction(nameof(Login));
+            return RedirectToAction(nameof(Login), "Account", new { area = "Admin" });
         }
     }
 }
+

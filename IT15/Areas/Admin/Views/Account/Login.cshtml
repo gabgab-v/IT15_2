@@ -1,7 +1,9 @@
-﻿@model YourProjectName.Areas.Admin.Controllers.AccountController.LoginInputModel
+﻿@model IT15.Areas.Admin.ViewModels.LoginViewModel
+@* The above @model directive has been updated to point to the new ViewModel location *@
+
 @{
     ViewData["Title"] = "Admin Log in";
-    Layout = null; // This page does not use the main layout file
+    Layout = null; // This page does not use a layout
 }
 
 <!DOCTYPE html>
@@ -11,8 +13,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - OpenBook HRIS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -20,63 +20,45 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
-    <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
-        <div>
-            <!-- Logo and Branding -->
-            <div class="flex justify-center items-center mb-6">
-                <img src="https://placehold.co/50x50/3b82f6/ffffff?text=OB" alt="OpenBook Logo" class="rounded-full">
-                <span class="ml-4 text-3xl font-bold text-gray-800">OpenBook</span>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full max-w-md">
+        <div class="bg-white shadow-lg rounded-xl p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Administrator Login</h2>
+                <p class="text-gray-500">Welcome back to OpenBook HRIS</p>
             </div>
-            <h2 class="text-center text-2xl font-semibold text-gray-700">Administrator Login</h2>
-            <p class="mt-2 text-center text-sm text-gray-500">
-                Please enter your credentials to access the dashboard.
-            </p>
+
+            <!-- THIS FORM IS THE CRITICAL PART -->
+            <form asp-area="Admin" asp-controller="Account" asp-action="Login" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-md mb-4 text-sm" role="alert"></div>
+
+                <div class="mb-4">
+                    <label asp-for="Email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input asp-for="Email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="admin@example.com" />
+                    <span asp-validation-for="Email" class="text-red-600 text-sm"></span>
+                </div>
+
+                <div class="mb-6">
+                    <label asp-for="Password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input asp-for="Password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••" />
+                    <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+                </div>
+
+                <div class="mb-6 flex items-center">
+                    <input asp-for="RememberMe" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                    <label asp-for="RememberMe" class="ml-2 block text-sm text-gray-900">Remember me?</label>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Log In
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <!-- Login Form -->
-        <form class="mt-8 space-y-6" asp-action="Login" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
-            @Html.AntiForgeryToken()
-
-            <!-- This div displays summary of validation errors -->
-            <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
-
-            <div class="rounded-md shadow-sm -space-y-px">
-                <div>
-                    <label for="Email" class="sr-only">Email address</label>
-                    <input asp-for="Email" id="Email" name="Email" type="email" autocomplete="email" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Email address">
-                    <span asp-validation-for="Email" class="text-red-500 text-xs"></span>
-                </div>
-                <div>
-                    <label for="Password" class="sr-only">Password</label>
-                    <input asp-for="Password" id="Password" name="Password" type="password" autocomplete="current-password" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Password">
-                    <span asp-validation-for="Password" class="text-red-500 text-xs"></span>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <input asp-for="RememberMe" id="remember-me" name="RememberMe" type="checkbox"
-                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label asp-for="RememberMe" for="remember-me" class="ml-2 block text-sm text-gray-900">
-                        Remember me
-                    </label>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit"
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    Sign in
-                </button>
-            </div>
-        </form>
+        <p class="text-center text-sm text-gray-500 mt-4">
+            &copy; @DateTime.Now.Year - OpenBook HRIS. All rights reserved.
+        </p>
     </div>
-
 </body>
 </html>
