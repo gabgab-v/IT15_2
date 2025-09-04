@@ -1,0 +1,32 @@
+﻿    @model IEnumerable<IT15.Models.DailyLog>
+
+@{
+    ViewData["Title"] = "My Daily Logs";
+}
+
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold text-gray-800">Daily Log Entries</h2>
+    <a asp-action="AddDailyLog" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+        Add New Log
+    </a>
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    @if (Model.Any())
+    {
+        <ul class="space-y-4">
+            @foreach (var log in Model)
+            {
+                <li class="border-b border-gray-200 pb-3">
+                    <p class="font-semibold text-gray-700">@log.Date.ToString("MMMM dd, yyyy")</p>
+                    <p class="text-gray-600 mt-1">@log.LogContent</p>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="text-gray-500">You have not created any daily logs yet.</p>
+    }
+</div>
+

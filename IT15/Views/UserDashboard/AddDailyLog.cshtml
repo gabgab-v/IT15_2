@@ -1,0 +1,48 @@
+﻿    @model IT15.Models.DailyLog
+
+@{
+    ViewData["Title"] = "Add New Daily Log";
+}
+
+<h2 class="text-2xl font-semibold text-gray-800 mb-6">Add New Log Entry</h2>
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-lg">
+    <form asp-action="AddDailyLog" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4"></div>
+
+        <div class="mb-4">
+            <label asp-for="Date" class="block text-sm font-medium text-gray-700"></label>
+            <input asp-for="Date" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            <span asp-validation-for="Date" class="text-red-600 text-sm"></span>
+        </div>
+
+        <div class="mb-6">
+            <label asp-for="LogContent" class="block text-sm font-medium text-gray-700"></label>
+            <textarea asp-for="LogContent" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <span asp-validation-for="LogContent" class="text-red-600 text-sm"></span>
+        </div>
+
+        <div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                Save Log
+            </button>
+        </div>
+    </form>
+</div>
+    ```
+
+### **Step 4: Update the Sidebar Link**
+
+Finally, update the "Daily Log" link in your user dashboard layout so it points to your new `DailyLogs` action.
+
+Open `Views/UserDashboard/_Layout.cshtml` and find the anchor tag for "Daily Log". Update the `href` to use the `asp-action` tag helper:
+
+```html
+<!-- Inside Views/UserDashboard/_Layout.cshtml -->
+<!-- ... other links -->
+<a asp-controller="UserDashboard" asp-action="DailyLogs" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+    <i data-lucide="book-open" class="w-5 h-5 mr-3"></i>
+    Daily Log
+</a>
+<!-- ... other links -->
