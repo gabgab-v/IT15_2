@@ -1,23 +1,63 @@
-﻿@{
-    ViewData["Title"] = "Dashboard";
+﻿@model IEnumerable<IT15.ViewModels.Admin.UserViewModel>
+
+@{
+    ViewData["Title"] = "User Management Dashboard";
 }
 
 <div class="border-b border-gray-200 pb-4 mb-6">
-    <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-    <p class="text-gray-500 mt-1">A summary of key metrics and activities.</p>
+    <h2 class="text-2xl font-bold text-gray-900">Registered Users</h2>
+    <p class="text-gray-500 mt-1">A list of all users currently in the system.</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="bg-white p-6 rounded-lg shadow-sm">
-        <div class="flex items-center">
-            <div class="bg-blue-100 p-3 rounded-full">
-                <i data-lucide="users" class="w-6 h-6 text-blue-600"></i>
-            </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Total Employees</p>
-                <p class="text-2xl font-bold text-gray-900">142</p>
-            </div>
-        </div>
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email Confirmed
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Roles
+                    </th>
+                    <th scope="col" class="relative px-6 py-3">
+                        <span class="sr-only">Actions</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            @user.Email
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if (user.EmailConfirmed)
+                            {
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Yes
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    No
+                                </span>
+                            }
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @string.Join(", ", user.Roles)
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="#" class="text-blue-600 hover:text-blue-900">Edit</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-
 </div>

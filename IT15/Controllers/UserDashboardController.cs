@@ -1,8 +1,9 @@
-﻿using IT15.Data; // <-- Add this to use the DbContext
+﻿using IT15.Data;
 using IT15.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -10,71 +11,96 @@ using System.Threading.Tasks;
 
 namespace IT15.Controllers
 {
-    [Authorize]
+    [Authorize] // All actions in this controller require the user to be logged in.
     public class UserDashboardController : Controller
     {
-        private readonly ApplicationDbContext _context; // Database context
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _context;
         private readonly SignInManager<IdentityUser> _signInManager;
 
-
-        // Inject the DbContext and UserManager
-        public UserDashboardController(ApplicationDbContext context, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public UserDashboardController(ApplicationDbContext context, SignInManager<IdentityUser> signInManager)
         {
             _context = context;
-            _userManager = userManager;
             _signInManager = signInManager;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+        // GET: /UserDashboard/Index
+        public IActionResult Index() => View();
 
-        // GET: /UserDashboard/DailyLogs
-        // This action now reads from the database.
+        // --- Daily Log / Attendance ---
+        #region Attendance
         [HttpGet]
-        public IActionResult DailyLogs()
+        public async Task<IActionResult> DailyLogs()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            // Query the database for logs belonging to the current user
-            var userLogs = _context.DailyLogs
+            var userLogs = await _context.DailyLogs
                                    .Where(log => log.UserId == userId)
-                                   .OrderByDescending(log => log.Date) // Show newest first
-                                   .ToList();
+                                   .OrderByDescending(log => log.Date)
+                                   .ToListAsync();
             return View(userLogs);
         }
 
-        // POST: /UserDashboard/LogAttendance
-        // This action creates a new attendance log for the current day.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogAttendance()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var today = DateTime.Today;
-
-            // Check if attendance has already been logged for today
-            bool alreadyLogged = _context.DailyLogs.Any(log => log.UserId == userId && log.Date == today);
+            bool alreadyLogged = await _context.DailyLogs.AnyAsync(log => log.UserId == userId && log.Date == today);
 
             if (!alreadyLogged)
             {
-                var log = new DailyLog
-                {
-                    UserId = userId,
-                    Date = today // Automatically set to the current date
-                };
-
-                _context.DailyLogs.Add(log);
-                await _context.SaveChangesAsync(); // Save the new log to the database
+                _context.DailyLogs.Add(new DailyLog { UserId = userId, Date = today });
+                await _context.SaveChangesAsync();
             }
-
             return RedirectToAction("DailyLogs");
         }
+        #endregion
 
-        // DELETE THIS ACTION: Since we have no form, we don't need this anymore.
-        // public IActionResult AddDailyLog() { ... }
+        // --- Leave Requests ---
+        #region LeaveRequests
+        [HttpGet]
+        public async Task<IActionResult> LeaveRequests()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var requests = await _context.LeaveRequests
+                                         .Where(r => r.RequestingEmployeeId == userId)
+                                         .OrderByDescending(r => r.DateRequested)
+                                         .ToListAsync();
+            return View(requests);
+        }
 
+        [HttpGet]
+        public IActionResult ApplyForLeave()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyForLeave(LeaveRequest leaveRequest)
+        {
+            // Custom validation: End date must not be before the start date.
+            if (leaveRequest.EndDate < leaveRequest.StartDate)
+            {
+                ModelState.AddModelError(nameof(leaveRequest.EndDate), "End date cannot be before the start date.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                leaveRequest.RequestingEmployeeId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                leaveRequest.DateRequested = DateTime.Now;
+                leaveRequest.Status = LeaveRequestStatus.Pending;
+
+                _context.Add(leaveRequest);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(LeaveRequests));
+            }
+            // If we get here, something was invalid, so redisplay the form.
+            return View(leaveRequest);
+        }
+        #endregion
+
+        // --- Logout ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -84,4 +110,5 @@ namespace IT15.Controllers
         }
     }
 }
+
 

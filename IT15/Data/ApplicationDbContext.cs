@@ -12,5 +12,7 @@ namespace IT15.Data
 
         }
         public DbSet<DailyLog> DailyLogs { get; set; }
+
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
     }
 }

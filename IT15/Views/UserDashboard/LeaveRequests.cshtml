@@ -1,0 +1,57 @@
+﻿@model IEnumerable<IT15.Models.LeaveRequest>
+
+@{
+    ViewData["Title"] = "My Leave Requests";
+
+    // Helper to get the correct CSS class based on the request status
+    string GetStatusBadgeClass(LeaveRequestStatus status)
+    {
+        return status switch
+        {
+            LeaveRequestStatus.Approved => "bg-green-100 text-green-800",
+            LeaveRequestStatus.Pending => "bg-yellow-100 text-yellow-800",
+            LeaveRequestStatus.Denied => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+}
+
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold text-gray-800">My Leave Requests</h2>
+    <a asp-action="ApplyForLeave" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+        Apply for Leave
+    </a>
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var request in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            @request.StartDate.ToString("MMM dd, yyyy") - @request.EndDate.ToString("MMM dd, yyyy")
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            @request.Reason
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(request.Status)">
+                                @request.Status.ToString()
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

@@ -1,25 +1,23 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using IT15.ViewModels.Admin; // Use the ViewModel
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using IT15.ViewModels.Admin; // Use the new ViewModel
+using Microsoft.AspNetCore.Authorization;
 
 namespace IT15.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
-    public class DashboardController : Controller
+    [Authorize(Roles = "Admin")] // Secure this controller
+    public class UserController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
 
-        public DashboardController(UserManager<IdentityUser> userManager)
+        public UserController(UserManager<IdentityUser> userManager)
         {
             _userManager = userManager;
         }
 
-        // GET: /Admin/Dashboard/Index
+        // GET: /Admin/User
         public async Task<IActionResult> Index()
         {
             // Get all users from the database
@@ -39,9 +37,8 @@ namespace IT15.Areas.Admin.Controllers
                 });
             }
 
-            // Pass the list of user data to the view
+            // Pass the list of ViewModels to the view
             return View(userViewModels);
         }
     }
 }
-

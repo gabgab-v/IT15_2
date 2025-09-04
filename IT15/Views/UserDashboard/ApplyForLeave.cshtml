@@ -1,0 +1,46 @@
+﻿@model IT15.Models.LeaveRequest
+
+@{
+    ViewData["Title"] = "Apply for Leave";
+}
+
+<h2 class="text-2xl font-semibold text-gray-800 mb-6">New Leave Request</h2>
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-2xl">
+    <form asp-action="ApplyForLeave" method="post">
+        @Html.AntiForgeryToken()
+
+        <!--
+            THIS IS THE KEY CHANGE:
+            "All" will display all validation errors, including those for specific fields,
+            making it much easier to debug why the form isn't submitting.
+        -->
+        <div asp-validation-summary="All" class="text-red-600 mb-4 bg-red-50 p-3 rounded-md"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label asp-for="StartDate" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="StartDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <span asp-validation-for="StartDate" class="text-red-600 text-sm"></span>
+            </div>
+            <div>
+                <label asp-for="EndDate" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="EndDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <span asp-validation-for="EndDate" class="text-red-600 text-sm"></span>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <label asp-for="Reason" class="block text-sm font-medium text-gray-700"></label>
+            <textarea asp-for="Reason" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <span asp-validation-for="Reason" class="text-red-600 text-sm"></span>
+        </div>
+
+        <div class="mt-8">
+            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Submit Request
+            </button>
+        </div>
+    </form>
+</div>
+
