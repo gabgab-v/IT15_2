@@ -13,6 +13,7 @@ namespace IT15.Data
         }
         public DbSet<DailyLog> DailyLogs { get; set; }
 
+        public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<Payroll> Payrolls { get; set; }
         public DbSet<PaySlip> PaySlips { get; set; }

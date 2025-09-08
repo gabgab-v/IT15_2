@@ -15,8 +15,10 @@ namespace IT15.Controllers
     public class UserDashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
+        // THE FIX: Change ApplicationUser back to the default IdentityUser
         private readonly SignInManager<IdentityUser> _signInManager;
 
+        // THE FIX: The constructor must also request the default SignInManager
         public UserDashboardController(ApplicationDbContext context, SignInManager<IdentityUser> signInManager)
         {
             _context = context;

@@ -23,13 +23,26 @@ namespace IT15.Areas.Admin.Controllers
         }
 
         // GET: /Admin/LeaveRequest
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString, string statusFilter)
         {
-            var leaveRequests = await _context.LeaveRequests
-                                              .Include(r => r.RequestingEmployee) // Include user data
-                                              .OrderByDescending(r => r.DateRequested)
-                                              .ToListAsync();
-            return View(leaveRequests);
+            ViewData["CurrentFilter"] = searchString;
+            ViewData["StatusFilter"] = statusFilter;
+
+            // THE FIX: Explicitly define the query type as IQueryable<LeaveRequest>
+            IQueryable<LeaveRequest> requestsQuery = _context.LeaveRequests.Include(r => r.RequestingEmployee);
+
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                requestsQuery = requestsQuery.Where(r => r.RequestingEmployee.Email.Contains(searchString));
+            }
+
+            if (!String.IsNullOrEmpty(statusFilter) && Enum.TryParse<LeaveRequestStatus>(statusFilter, out var status))
+            {
+                requestsQuery = requestsQuery.Where(r => r.Status == status);
+            }
+
+            var requests = await requestsQuery.OrderByDescending(r => r.DateRequested).ToListAsync();
+            return View(requests);
         }
 
         // POST: /Admin/LeaveRequest/Approve/5
