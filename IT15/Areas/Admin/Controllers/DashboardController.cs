@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using IT15.Data;
+using IT15.Models;
+using IT15.ViewModels.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using IT15.ViewModels.Admin; // Use the ViewModel
-using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IT15.Areas.Admin.Controllers
@@ -13,34 +16,32 @@ namespace IT15.Areas.Admin.Controllers
     public class DashboardController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public DashboardController(UserManager<IdentityUser> userManager)
+        public DashboardController(UserManager<IdentityUser> userManager, ApplicationDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
-        // GET: /Admin/Dashboard/Index
         public async Task<IActionResult> Index()
         {
-            // Get all users from the database
-            var users = await _userManager.Users.ToListAsync();
+            var today = DateTime.Today;
 
-            var userViewModels = new List<UserViewModel>();
-
-            foreach (var user in users)
+            var viewModel = new DashboardViewModel
             {
-                userViewModels.Add(new UserViewModel
-                {
-                    Id = user.Id,
-                    Email = user.Email,
-                    EmailConfirmed = user.EmailConfirmed,
-                    // Get the list of roles for each user
-                    Roles = await _userManager.GetRolesAsync(user)
-                });
-            }
+                TotalUsers = await _userManager.Users.CountAsync(),
 
-            // Pass the list of user data to the view
-            return View(userViewModels);
+                AttendanceTodayCount = await _context.DailyLogs
+                    .CountAsync(log => log.CheckInTime.Date == today),
+
+                UsersOnLeaveToday = await _context.LeaveRequests
+                    .CountAsync(req => req.Status == LeaveRequestStatus.Approved &&
+                                       today >= req.StartDate.Date &&
+                                       today <= req.EndDate.Date)
+            };
+
+            return View(viewModel);
         }
     }
 }

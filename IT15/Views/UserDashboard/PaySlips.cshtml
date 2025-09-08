@@ -1,0 +1,34 @@
+﻿    @model IEnumerable<IT15.Models.PaySlip>
+
+@{
+    ViewData["Title"] = "My Pay Slips";
+}
+
+<h2 class="text-2xl font-semibold text-gray-800 mb-6">My Pay Slips</h2>
+
+<div class="space-y-6">
+    @if (Model.Any())
+    {
+        @foreach (var slip in Model)
+        {
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900">@slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
+                <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div>
+                        <span class="font-medium">Gross Pay:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+                    </div>
+                    <div>
+                        <span class="font-medium">Total Deductions:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+                    </div>
+                    <div class="text-base font-bold">
+                        <span class="font-medium">Net Pay:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>No pay slips have been generated for you yet.</p>
+    }
+</div>

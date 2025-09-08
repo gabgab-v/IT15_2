@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace IT15.Controllers
 {
-    [Authorize] // All actions in this controller require the user to be logged in.
+    [Authorize]
     public class UserDashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -23,49 +23,78 @@ namespace IT15.Controllers
             _signInManager = signInManager;
         }
 
-        // GET: /UserDashboard/Index
         public IActionResult Index() => View();
 
-        // --- Daily Log / Attendance ---
-        #region Attendance
+        // --- Attendance Actions ---
+
         [HttpGet]
         public async Task<IActionResult> DailyLogs()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userLogs = await _context.DailyLogs
-                                   .Where(log => log.UserId == userId)
-                                   .OrderByDescending(log => log.Date)
-                                   .ToListAsync();
+                                         .Where(log => log.UserId == userId)
+                                         .OrderByDescending(log => log.CheckInTime)
+                                         .ToListAsync();
             return View(userLogs);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LogAttendance()
+        public async Task<IActionResult> CheckIn()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var today = DateTime.Today;
-            bool alreadyLogged = await _context.DailyLogs.AnyAsync(log => log.UserId == userId && log.Date == today);
 
-            if (!alreadyLogged)
+            bool alreadyCheckedIn = await _context.DailyLogs.AnyAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
+
+            if (!alreadyCheckedIn)
             {
-                _context.DailyLogs.Add(new DailyLog { UserId = userId, Date = today });
+                var newLog = new DailyLog { UserId = userId, CheckInTime = DateTime.Now };
+                _context.DailyLogs.Add(newLog);
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction("DailyLogs");
         }
-        #endregion
 
-        // --- Leave Requests ---
-        #region LeaveRequests
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckOut()
+        {
+            // SERVER-SIDE VALIDATION: Check if it's after 5:00 PM
+            var fivePm = DateTime.Today.AddHours(17); // 5:00 PM
+            if (DateTime.Now < fivePm)
+            {
+                // Add a temporary message to inform the user.
+                TempData["ErrorMessage"] = "Check-out is only available after 5:00 PM.";
+                return RedirectToAction("DailyLogs");
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var today = DateTime.Today;
+
+            var todaysLog = await _context.DailyLogs
+                                        .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today && log.CheckOutTime == null);
+
+            if (todaysLog != null)
+            {
+                todaysLog.CheckOutTime = DateTime.Now;
+                _context.Update(todaysLog);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("DailyLogs");
+        }
+
+        // --- Leave Request Actions ---
         [HttpGet]
         public async Task<IActionResult> LeaveRequests()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var requests = await _context.LeaveRequests
-                                         .Where(r => r.RequestingEmployeeId == userId)
-                                         .OrderByDescending(r => r.DateRequested)
-                                         .ToListAsync();
+                .Where(r => r.RequestingEmployeeId == userId)
+                .OrderByDescending(r => r.DateRequested)
+                .ToListAsync();
             return View(requests);
         }
 
@@ -79,10 +108,9 @@ namespace IT15.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApplyForLeave(LeaveRequest leaveRequest)
         {
-            // Custom validation: End date must not be before the start date.
             if (leaveRequest.EndDate < leaveRequest.StartDate)
             {
-                ModelState.AddModelError(nameof(leaveRequest.EndDate), "End date cannot be before the start date.");
+                ModelState.AddModelError("EndDate", "End date cannot be before the start date.");
             }
 
             if (ModelState.IsValid)
@@ -95,12 +123,10 @@ namespace IT15.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(LeaveRequests));
             }
-            // If we get here, something was invalid, so redisplay the form.
             return View(leaveRequest);
         }
-        #endregion
 
-        // --- Logout ---
+        // --- Logout Action ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -108,7 +134,20 @@ namespace IT15.Controllers
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
+
+        [HttpGet]
+        public async Task<IActionResult>
+            PaySlips()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var paySlips = await _context.PaySlips
+            .Include(p => p.Payroll) // Eager load the related Payroll data
+            .Where(p => p.EmployeeId == userId)
+            .OrderByDescending(p => p.Payroll.PayrollMonth)
+            .ToListAsync();
+            return View(paySlips);
+        }
+
     }
 }
-
 

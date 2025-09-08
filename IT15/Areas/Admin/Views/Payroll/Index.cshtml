@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Generate Payroll";
+}
+
+<h2 class="text-2xl font-semibold text-gray-800 mb-6">Payroll Generation</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-md">
+    <form asp-action="Generate" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-4">
+            <label for="payrollMonth" class="block text-sm font-medium text-gray-700">Select Month and Year</label>
+            <input type="month" id="payrollMonth" name="payrollMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                Generate Payroll
+            </button>
+        </div>
+    </form>
+</div>
+

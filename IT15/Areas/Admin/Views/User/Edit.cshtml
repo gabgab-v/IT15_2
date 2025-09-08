@@ -1,0 +1,41 @@
+﻿@model IT15.ViewModels.Admin.EditUserViewModel
+
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="border-b border-gray-200 pb-4 mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Edit User: @Model.Email</h2>
+    <p class="text-gray-500 mt-1">Update the user's roles and password.</p>
+</div>
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-2xl">
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-red-600 mb-4 bg-red-50 p-3 rounded-md"></div>
+
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-4">
+            <label asp-for="Email" class="block text-sm font-medium text-gray-700"></label>
+            <input asp-for="Email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly />
+        </div>
+
+        <div class="mb-6">
+            <label asp-for="NewPassword" class="block text-sm font-medium text-gray-700"></label>
+            <input asp-for="NewPassword" type="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Leave blank to keep current password" />
+            <span asp-validation-for="NewPassword" class="text-red-600 text-sm"></span>
+        </div>
+
+        <!-- Add Role Management Here in the Future -->
+
+        <div class="mt-8 flex justify-end space-x-3">
+            <a asp-action="Index" class="bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-300">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>

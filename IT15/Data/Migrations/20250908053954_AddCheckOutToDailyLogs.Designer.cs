@@ -4,6 +4,7 @@ using IT15.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IT15.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250908053954_AddCheckOutToDailyLogs")]
+    partial class AddCheckOutToDailyLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,79 +89,6 @@ namespace IT15.Data.Migrations
                     b.HasIndex("RequestingEmployeeId");
 
                     b.ToTable("LeaveRequests");
-                });
-
-            modelBuilder.Entity("IT15.Models.PaySlip", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AbsentDeductions")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("BasicSalary")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("GrossPay")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("NetPay")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("OvertimePay")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("PagIBIGDeduction")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<int>("PayrollId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PhilHealthDeduction")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("SSSDeduction")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("TaxDeduction")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<decimal>("TotalDeductions")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("PayrollId");
-
-                    b.ToTable("PaySlips");
-                });
-
-            modelBuilder.Entity("IT15.Models.Payroll", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateGenerated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("PayrollMonth")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Payrolls");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -378,25 +308,6 @@ namespace IT15.Data.Migrations
                     b.Navigation("RequestingEmployee");
                 });
 
-            modelBuilder.Entity("IT15.Models.PaySlip", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IT15.Models.Payroll", "Payroll")
-                        .WithMany("PaySlips")
-                        .HasForeignKey("PayrollId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("Payroll");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -446,11 +357,6 @@ namespace IT15.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("IT15.Models.Payroll", b =>
-                {
-                    b.Navigation("PaySlips");
                 });
 #pragma warning restore 612, 618
         }
