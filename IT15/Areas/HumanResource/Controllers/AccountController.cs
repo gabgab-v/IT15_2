@@ -33,7 +33,7 @@ namespace IT15.Areas.HumanResource.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
-            returnUrl ??= Url.Action("Index", "LeaveRequest", new { area = "HumanResource" });
+            returnUrl ??= Url.Action("Index", "Dashboard", new { area = "HumanResource" });
 
             if (ModelState.IsValid)
             {

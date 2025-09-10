@@ -1,6 +1,9 @@
 using IT15.Data;
+using IT15.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Resend;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,20 @@ builder.Services.AddScoped<IT15.Services.PayrollService>();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Configuration
+    .AddUserSecrets<Program>()
+    .AddEnvironmentVariables();
+
+builder.Logging.AddConsole();
+
+// --- KEY CHANGES ---
+
+// 1. Register your custom EmailSender service
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+// Configure Resend using the recommended IHttpClientFactory approach.
+
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -83,15 +100,7 @@ app.UseAuthentication(); // <-- This was likely missing and is required.
 app.UseAuthorization();
 
 app.MapControllerRoute(
-    name: "AccountingArea",
-    pattern: "{area:exists}/{controller=Accounting}/{action=Index}/{id?}");
-
-app.MapControllerRoute(
-    name: "HumanResource",
-    pattern: "{area:exists}/{controller=LeaveRequest}/{action=Index}/{id?}");
-
-app.MapControllerRoute(
-    name: "AdminArea", // Renamed for clarity
+    name: "areas",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
 
 app.MapControllerRoute(

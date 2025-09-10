@@ -1,23 +1,55 @@
 ﻿@page
 @model RegisterConfirmationModel
 @{
-    ViewData["Title"] = "Register confirmation";
+    ViewData["Title"] = "Register Confirmation";
+    Layout = null; // Use a clean layout for a focused message
 }
 
-<h1>@ViewData["Title"]</h1>
-@{
-    if (@Model.DisplayConfirmAccountLink)
-    {
-<p>
-    This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-    Normally this would be emailed: <a id="confirm-link" href="@Model.EmailConfirmationUrl">Click here to confirm your account</a>
-</p>
-    }
-    else
-    {
-<p>
-        Please check your email to confirm your account.
-</p>
-    }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - OpenBook HRIS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg text-center">
+        <div>
+            <!-- Icon -->
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <i data-lucide="mail-check" class="h-6 w-6 text-green-600"></i>
+            </div>
+
+            <h2 class="mt-6 text-2xl font-bold text-gray-900">
+                Please Confirm Your Account
+            </h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Thank you for registering! We've sent a confirmation link to your email address:
+            </p>
+            <p class="mt-2 font-semibold text-gray-800">@Model.Email</p>
+            <p class="mt-4 text-sm text-gray-500">
+                Please click the link in that email to activate your account. If you don't see it, be sure to check your spam folder.
+            </p>
+        </div>
+
+        <div class="text-sm">
+            <a asp-page="/Index" class="font-medium text-blue-600 hover:text-blue-500">
+                ← Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

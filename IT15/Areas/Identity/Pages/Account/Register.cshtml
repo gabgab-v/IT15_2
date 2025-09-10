@@ -2,7 +2,7 @@
 @model RegisterModel
 @{
     ViewData["Title"] = "Register";
-    Layout = null; // no main layout, match login style
+    Layout = null; // Use a clean layout without the main navigation for a focused experience
 }
 
 <!DOCTYPE html>
@@ -44,31 +44,39 @@
             <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
 
             <div class="rounded-md shadow-sm -space-y-px">
+                <!-- Username -->
+                <div>
+                    <label asp-for="Input.Username" class="sr-only"></label>
+                    <input asp-for="Input.Username" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Username" />
+                    <span asp-validation-for="Input.Username" class="text-red-500 text-xs px-3"></span>
+                </div>
+
                 <!-- Email -->
                 <div>
-                    <label for="Input_Email" class="sr-only">Email address</label>
-                    <input asp-for="Input.Email" id="Input_Email" name="Input.Email" type="email" autocomplete="username" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                           placeholder="Email address" />
-                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs"></span>
+                    <label asp-for="Input.Email" class="sr-only"></label>
+                    <input asp-for="Input.Email" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Email address" />
+                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs px-3"></span>
+                </div>
+
+                <!-- Phone Number -->
+                <div>
+                    <label asp-for="Input.PhoneNumber" class="sr-only"></label>
+                    <input asp-for="Input.PhoneNumber" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Phone Number (optional)" />
+                    <span asp-validation-for="Input.PhoneNumber" class="text-red-500 text-xs px-3"></span>
                 </div>
 
                 <!-- Password -->
                 <div>
-                    <label for="Input_Password" class="sr-only">Password</label>
-                    <input asp-for="Input.Password" id="Input_Password" name="Input.Password" type="password" autocomplete="new-password" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                           placeholder="Password" />
-                    <span asp-validation-for="Input.Password" class="text-red-500 text-xs"></span>
+                    <label asp-for="Input.Password" class="sr-only"></label>
+                    <input asp-for="Input.Password" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Password" />
+                    <span asp-validation-for="Input.Password" class="text-red-500 text-xs px-3"></span>
                 </div>
 
                 <!-- Confirm Password -->
                 <div>
-                    <label for="Input_ConfirmPassword" class="sr-only">Confirm Password</label>
-                    <input asp-for="Input.ConfirmPassword" id="Input_ConfirmPassword" name="Input.ConfirmPassword" type="password" autocomplete="new-password" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                           placeholder="Confirm password" />
-                    <span asp-validation-for="Input.ConfirmPassword" class="text-red-500 text-xs"></span>
+                    <label asp-for="Input.ConfirmPassword" class="sr-only"></label>
+                    <input asp-for="Input.ConfirmPassword" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Confirm password" />
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-red-500 text-xs px-3"></span>
                 </div>
             </div>
 
@@ -82,12 +90,10 @@
         </form>
 
         <!-- Extra Links -->
-        <div class="text-sm text-center mt-4 space-y-2">
-            <p>
-                <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:text-blue-500">
-                    Already have an account? Sign in
-                </a>
-            </p>
+        <div class="text-sm text-center mt-4">
+            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:text-blue-500">
+                Already have an account? Sign in
+            </a>
         </div>
     </div>
 
@@ -96,3 +102,4 @@
     }
 </body>
 </html>
+

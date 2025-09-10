@@ -1,27 +1,62 @@
-﻿    @model IEnumerable<IT15.Models.PaySlip>
+﻿@model IEnumerable<IT15.Models.PaySlip>
 
 @{
     ViewData["Title"] = "My Pay Slips";
+    var culture = new System.Globalization.CultureInfo("en-PH");
 }
 
 <h2 class="text-2xl font-semibold text-gray-800 mb-6">My Pay Slips</h2>
 
-<div class="space-y-6">
+<div class="space-y-8">
     @if (Model.Any())
     {
         @foreach (var slip in Model)
         {
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 class="text-lg font-bold text-gray-900">@slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
-                <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
+                <!-- Payslip Header -->
+                <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                     <div>
-                        <span class="font-medium">Gross Pay:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+                        <h3 class="text-xl font-bold text-gray-900">Pay Slip for @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
+                        <p class="text-sm text-gray-500">Employee: @slip.Employee?.Email</p>
                     </div>
-                    <div>
-                        <span class="font-medium">Total Deductions:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+                    <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
+                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+                        Print
+                    </button>
+                </div>
+
+                <!-- Printable Payslip Details -->
+                <div id="payslip-@slip.Id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+                        <!-- Earnings Column -->
+                        <div class="space-y-3">
+                            <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Earnings</h4>
+                            <div class="flex justify-between text-sm"><span>Basic Salary:</span> <span>@slip.BasicSalary.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>Overtime Pay:</span> <span>@slip.OvertimePay.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
+                        </div>
+
+                        <!-- Deductions Column -->
+                        <div class="space-y-3">
+                            <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Deductions</h4>
+                            <div class="flex justify-between text-sm"><span>Absenteeism:</span> <span>- @slip.AbsentDeductions.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>SSS:</span> <span>- @slip.SSSDeduction.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>PhilHealth:</span> <span>- @slip.PhilHealthDeduction.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>Pag-IBIG:</span> <span>- @slip.PagIBIGDeduction.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>Tax:</span> <span>- @slip.TaxDeduction.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
+                        </div>
                     </div>
-                    <div class="text-base font-bold">
-                        <span class="font-medium">Net Pay:</span> @slip.NetPay.ToString("C", new System.Globalization.CultureInfo("en-PH"))
+
+                    <!-- Summary Section -->
+                    <div class="mt-8 pt-4 border-t-2 border-gray-300">
+                        <div class="flex justify-end">
+                            <div class="w-full md:w-1/2 space-y-2">
+                                <div class="flex justify-between font-medium"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
+                                <div class="flex justify-between font-medium"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
+                                <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Net Pay:</span> <span>@slip.NetPay.ToString("C", culture)</span></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -29,6 +64,66 @@
     }
     else
     {
-        <p>No pay slips have been generated for you yet.</p>
+        <p class="text-gray-600">No pay slips have been generated for you yet.</p>
     }
 </div>
+
+@section Scripts {
+    <script>
+        function printPayslip(payslipId) {
+            const payslipContent = document.getElementById(payslipId);
+            if (!payslipContent) {
+                alert('Error: Payslip content not found.');
+                return;
+            }
+
+            const printWindow = window.open('', '', 'height=700,width=900');
+            if (!printWindow) {
+                alert('Please disable your pop-up blocker.');
+                return;
+            }
+
+            // This HTML string includes your payslip content.
+            // Be sure to change "/css/site.css" to the correct path for your project's stylesheet.
+            const htmlContent = `
+                        <html>
+                        <head>
+                            <title>Print Payslip</title>
+                            <link rel="stylesheet" href="/css/site.css">
+                            <style>
+                                /* Add any print-specific styles here */
+                                body {
+                                    padding: 2rem;
+                                    background-color: white;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>Pay Slip Details</h1>
+                            ${payslipContent.innerHTML}
+                        </body>
+                        </html>
+                    `;
+
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const printButtons = document.querySelectorAll('.print-button');
+
+            printButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const payslipId = this.dataset.payslipid;
+                    printPayslip(payslipId);
+                });
+            });
+        });
+    </script>
+} // <-- This closing brace is crucial and was likely missing.
+

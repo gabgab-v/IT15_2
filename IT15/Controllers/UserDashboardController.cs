@@ -179,6 +179,7 @@ namespace IT15.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var paySlips = await _context.PaySlips
             .Include(p => p.Payroll) // Eager load the related Payroll data
+            .Include(p => p.Employee)
             .Where(p => p.EmployeeId == userId)
             .OrderByDescending(p => p.Payroll.PayrollMonth)
             .ToListAsync();

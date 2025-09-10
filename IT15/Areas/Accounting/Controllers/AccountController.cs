@@ -32,7 +32,7 @@ namespace IT15.Areas.Accounting.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
-            returnUrl ??= Url.Action("Index", "Accounting", new { area = "Accounting" });
+            returnUrl ??= Url.Action("Index", "Dashboard", new { area = "Accounting" });
 
             if (ModelState.IsValid)
             {

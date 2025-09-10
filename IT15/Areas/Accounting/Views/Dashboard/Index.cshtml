@@ -1,0 +1,54 @@
+﻿@model IT15.ViewModels.Accounting.AccountingDashboardViewModel
+
+@{
+    ViewData["Title"] = "Accounting Dashboard";
+}
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Accounting Dashboard</h1>
+    <p class="text-gray-600 mt-1">Summary of financial tasks and approvals.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Payrolls to Approve Card -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-yellow-300">
+        <div class="flex items-center">
+            <div class="bg-yellow-100 p-3 rounded-full">
+                <i data-lucide="file-check-2" class="w-6 h-6 text-yellow-600"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Payrolls to Approve</p>
+                <p class="text-2xl font-bold text-gray-900">@Model.PayrollsPendingApprovalCount</p>
+            </div>
+        </div>
+        <a asp-area="Accounting" asp-controller="Accounting" asp-action="Index" class="text-blue-600 hover:underline mt-4 inline-block font-medium text-sm">Review Payrolls &rarr;</a>
+    </div>
+
+    <!-- Total Pending Value Card -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-red-300">
+        <div class="flex items-center">
+            <div class="bg-red-100 p-3 rounded-full">
+                <i data-lucide="wallet" class="w-6 h-6 text-red-600"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Pending Value</p>
+                <p class="text-2xl font-bold text-gray-900">@Model.TotalPendingPayrollValue.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
+            </div>
+        </div>
+        <p class="text-gray-400 mt-4 text-sm">Sum of all net pay to be released.</p>
+    </div>
+
+    <!-- Approved This Month Card -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-green-300">
+        <div class="flex items-center">
+            <div class="bg-green-100 p-3 rounded-full">
+                <i data-lucide="landmark" class="w-6 h-6 text-green-600"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Payrolls Approved This Month</p>
+                <p class="text-2xl font-bold text-gray-900">@Model.PayrollsApprovedThisMonth</p>
+            </div>
+        </div>
+        <p class="text-gray-400 mt-4 text-sm">Based on date of budget approval.</p>
+    </div>
+</div>
