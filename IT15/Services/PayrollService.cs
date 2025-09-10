@@ -26,7 +26,8 @@ namespace IT15.Services
             var payroll = new Payroll
             {
                 PayrollMonth = new DateTime(month.Year, month.Month, 1),
-                DateGenerated = DateTime.Now
+                DateGenerated = DateTime.Now,
+                Status = PayrollStatus.PendingApproval // Set the initial status
             };
 
             var employees = await _userManager.GetUsersInRoleAsync("User");

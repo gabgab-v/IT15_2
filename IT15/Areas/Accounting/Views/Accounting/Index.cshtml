@@ -1,0 +1,42 @@
+﻿    @model IEnumerable<IT15.Models.Payroll>
+
+@{
+    ViewData["Title"] = "Payroll Approval";
+}
+
+<h2 class="text-2xl font-bold text-gray-900 mb-4">Pending Payroll Approvals</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+
+<div class="space-y-6">
+    @if (Model.Any())
+    {
+        @foreach (var payroll in Model)
+        {
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">@payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
+                        <p class="text-sm text-gray-500">Total Net Pay: @payroll.PaySlips.Sum(p => p.NetPay).ToString("C")</p>
+                        <p class="text-sm text-gray-500">Total Employees: @payroll.PaySlips.Count()</p>
+                    </div>
+                    <form asp-action="ApproveBudget" asp-route-id="@payroll.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-green-700">
+                            Approve Budget
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="text-gray-600">There are no payrolls currently pending budget approval.</p>
+    }
+</div>

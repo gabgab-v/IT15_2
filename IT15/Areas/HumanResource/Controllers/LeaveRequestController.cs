@@ -1,16 +1,18 @@
 ﻿using IT15.Data;
-using IT15.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using IT15.Models;
 
-namespace IT15.Areas.Admin.Controllers
+namespace IT15.Areas.HumanResource.Controllers
 {
-    [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Area("HumanResource")]
+    // Allow both HR and Admin to access this feature
+    [Authorize(Roles = "Admin,HumanResource")]
     public class LeaveRequestController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,13 +24,11 @@ namespace IT15.Areas.Admin.Controllers
             _userManager = userManager;
         }
 
-        // GET: /Admin/LeaveRequest
         public async Task<IActionResult> Index(string searchString, string statusFilter)
         {
             ViewData["CurrentFilter"] = searchString;
             ViewData["StatusFilter"] = statusFilter;
 
-            // THE FIX: Explicitly define the query type as IQueryable<LeaveRequest>
             IQueryable<LeaveRequest> requestsQuery = _context.LeaveRequests.Include(r => r.RequestingEmployee);
 
             if (!String.IsNullOrEmpty(searchString))
@@ -45,37 +45,34 @@ namespace IT15.Areas.Admin.Controllers
             return View(requests);
         }
 
-        // POST: /Admin/LeaveRequest/Approve/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
-            var leaveRequest = await _context.LeaveRequests.FindAsync(id);
-            if (leaveRequest != null)
+            var request = await _context.LeaveRequests.FindAsync(id);
+            if (request != null)
             {
-                leaveRequest.Status = LeaveRequestStatus.Approved;
-                leaveRequest.ApprovedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                leaveRequest.DateActioned = DateTime.Now;
+                request.Status = LeaveRequestStatus.Approved;
+                request.DateActioned = DateTime.Now;
+                request.ApprovedById = _userManager.GetUserId(User);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Admin/LeaveRequest/Deny/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Deny(int id)
         {
-            var leaveRequest = await _context.LeaveRequests.FindAsync(id);
-            if (leaveRequest != null)
+            var request = await _context.LeaveRequests.FindAsync(id);
+            if (request != null)
             {
-                leaveRequest.Status = LeaveRequestStatus.Denied;
-                leaveRequest.ApprovedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                leaveRequest.DateActioned = DateTime.Now;
+                request.Status = LeaveRequestStatus.Denied;
+                request.DateActioned = DateTime.Now;
+                request.ApprovedById = _userManager.GetUserId(User);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
     }
 }
-

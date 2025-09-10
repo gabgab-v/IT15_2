@@ -1,0 +1,99 @@
+﻿@model IEnumerable<IT15.Models.Payroll>
+
+@{
+    ViewData["Title"] = "Payroll Management";
+
+    
+    string GetStatusBadgeClass(PayrollStatus status)
+    {
+        return status switch
+        {
+            PayrollStatus.BudgetApproved => "bg-blue-100 text-blue-800",
+            PayrollStatus.PendingApproval => "bg-yellow-100 text-yellow-800",
+            PayrollStatus.Completed => "bg-green-100 text-green-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- Left Column: Generate Payroll -->
+    <div class="lg:col-span-1">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Generate New Payroll</h2>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <form asp-action="Generate" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-4">
+                    <label for="payrollMonth" class="block text-sm font-medium text-gray-700">Select Month and Year</label>
+                    <input type="month" id="payrollMonth" name="payrollMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                        Generate & Send for Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Payroll History -->
+    <div class="lg:col-span-2">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Payroll History</h2>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+                <p>@TempData["SuccessMessage"]</p>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                <p>@TempData["ErrorMessage"]</p>
+            </div>
+        }
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Month</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Net Pay</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach (var payroll in Model)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    @payroll.PayrollMonth.ToString("MMMM yyyy")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    @payroll.PaySlips.Sum(p => p.NetPay).ToString("C")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(payroll.Status)">
+                                        @payroll.Status.ToString()
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    @if (payroll.Status == PayrollStatus.BudgetApproved)
+                                    {
+                                        <form asp-action="Release" asp-route-id="@payroll.Id" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="text-green-600 hover:text-green-900">Release Payslips</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

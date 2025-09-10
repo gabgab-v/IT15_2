@@ -23,6 +23,14 @@ builder.Services.ConfigureApplicationCookie(options =>
         {
             context.Response.Redirect("/Admin/Account/Login");
         }
+        else if (context.Request.Path.StartsWithSegments("/HumanResource"))
+        {
+            context.Response.Redirect("/HumanResource/Account/Login");
+        }
+        else if (context.Request.Path.StartsWithSegments("/Accounting"))
+        {
+            context.Response.Redirect("/Accounting/Account/Login");
+        }
         else
         {
             context.Response.Redirect("/Identity/Account/Login");
@@ -42,8 +50,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var configuration = services.GetRequiredService<IConfiguration>();
-        // Ensure you have a SeedData class with an Initialize method
-        // await SeedData.Initialize(services, configuration);
+        // THE FIX: This line is now active and will call your seeder.
+        await SeedData.Initialize(services, configuration);
     }
     catch (Exception ex)
     {
@@ -73,6 +81,14 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication(); // <-- This was likely missing and is required.
 app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "AccountingArea",
+    pattern: "{area:exists}/{controller=Accounting}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "HumanResource",
+    pattern: "{area:exists}/{controller=LeaveRequest}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "AdminArea", // Renamed for clarity

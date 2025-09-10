@@ -16,12 +16,14 @@ namespace IT15.Areas.Admin.Controllers
     public class UserController : Controller
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context; // Declare both services
 
         // THE FIX: The constructor must request both services from dependency injection.
-        public UserController(UserManager<IdentityUser> userManager, ApplicationDbContext context)
+        public UserController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _context = context; // Initialize the DbContext
         }
 
@@ -123,13 +125,14 @@ namespace IT15.Areas.Admin.Controllers
             {
                 Id = user.Id,
                 Email = user.Email,
-                Roles = await _userManager.GetRolesAsync(user)
+                UserRoles = await _userManager.GetRolesAsync(user),
+                AllRoles = await _roleManager.Roles.ToListAsync() // Get all available roles
             };
 
             return View(model);
         }
 
-        // POST: /Admin/User/Edit/some-guid
+        // POST: /Admin/User/Edit/{id} (UPDATED)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditUserViewModel model)
@@ -139,22 +142,42 @@ namespace IT15.Areas.Admin.Controllers
             var user = await _userManager.FindByIdAsync(model.Id);
             if (user == null) return NotFound();
 
+            // --- Password Update Logic (Unchanged) ---
             if (!string.IsNullOrEmpty(model.NewPassword))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
-
-                if (!result.Succeeded)
+                var passResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+                if (!passResult.Succeeded)
                 {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
+                    foreach (var error in passResult.Errors) ModelState.AddModelError(string.Empty, error.Description);
                     return View(model);
                 }
             }
 
-            await _userManager.UpdateAsync(user);
+            // --- ROLE UPDATE LOGIC ---
+            var currentUserRoles = await _userManager.GetRolesAsync(user);
+            var selectedRoles = model.SelectedRoles ?? new List<string>();
+
+            // Prevent removing the last administrator
+            if (currentUserRoles.Contains("Admin") && !selectedRoles.Contains("Admin"))
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("Admin");
+                if (admins.Count == 1 && admins[0].Id == user.Id)
+                {
+                    ModelState.AddModelError(string.Empty, "Cannot remove the last administrator role from the system.");
+                    // Re-populate data for the view
+                    model.AllRoles = await _roleManager.Roles.ToListAsync();
+                    model.UserRoles = currentUserRoles;
+                    return View(model);
+                }
+            }
+
+            var rolesToAdd = selectedRoles.Except(currentUserRoles);
+            var rolesToRemove = currentUserRoles.Except(selectedRoles);
+
+            await _userManager.AddToRolesAsync(user, rolesToAdd);
+            await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+
             return RedirectToAction("Index");
         }
     }

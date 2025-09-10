@@ -28,6 +28,23 @@
         </div>
 
         <!-- Add Role Management Here in the Future -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700">Assign Roles</label>
+            <div class="mt-2 space-y-2 p-4 border border-gray-200 rounded-md">
+                @foreach (var role in Model.AllRoles)
+                {
+                    <div class="flex items-center">
+                        <input type="checkbox" name="SelectedRoles" value="@role.Name"
+                               id="role-@role.Id"
+                        @(Model.UserRoles.Contains(role.Name) ? "checked" : "")
+                               class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                        <label for="role-@role.Id" class="ml-3 block text-sm text-gray-900">
+                            @role.Name
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
 
         <div class="mt-8 flex justify-end space-x-3">
             <a asp-action="Index" class="bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-300">

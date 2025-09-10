@@ -1,5 +1,6 @@
 ﻿using IT15.Data;
 using IT15.Models;
+using IT15.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,41 @@ namespace IT15.Controllers
             _signInManager = signInManager;
         }
 
-        public IActionResult Index() => View();
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var today = DateTime.Today;
+
+            // 1. Get today's attendance status
+            var todaysLog = await _context.DailyLogs
+                .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
+
+            var attendanceStatus = TodayAttendanceStatus.NotCheckedIn;
+            if (todaysLog != null)
+            {
+                attendanceStatus = todaysLog.CheckOutTime.HasValue ? TodayAttendanceStatus.Completed : TodayAttendanceStatus.CheckedIn;
+            }
+
+            // 2. Get next upcoming approved leave
+            var upcomingLeave = await _context.LeaveRequests
+                .Where(r => r.RequestingEmployeeId == userId && r.Status == LeaveRequestStatus.Approved && r.StartDate >= today)
+                .OrderBy(r => r.StartDate)
+                .FirstOrDefaultAsync();
+
+            // 3. Get count of pending leave requests
+            var pendingRequestsCount = await _context.LeaveRequests
+                .CountAsync(r => r.RequestingEmployeeId == userId && r.Status == LeaveRequestStatus.Pending);
+
+            var model = new UserDashboardViewModel
+            {
+                AttendanceStatus = attendanceStatus,
+                UpcomingLeave = upcomingLeave,
+                PendingLeaveRequestsCount = pendingRequestsCount
+            };
+
+            return View(model);
+        }
 
         // --- Attendance Actions ---
 

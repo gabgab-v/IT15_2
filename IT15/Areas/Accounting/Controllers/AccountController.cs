@@ -1,0 +1,78 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
+
+namespace IT15.Areas.Accounting.Controllers
+{
+    [Area("Accounting")]
+    [AllowAnonymous]
+    public class AccountController : Controller
+    {
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly ILogger<AccountController> _logger;
+
+        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<AccountController> logger)
+        {
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public IActionResult Login(string returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
+        {
+            returnUrl ??= Url.Action("Index", "Accounting", new { area = "Accounting" });
+
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user != null && (await _userManager.IsInRoleAsync(user, "Accounting") || await _userManager.IsInRoleAsync(user, "Admin")))
+                {
+                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false);
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("Accounting user logged in.");
+                        return LocalRedirect(returnUrl);
+                    }
+                }
+
+                ModelState.AddModelError(string.Empty, "Invalid login attempt or insufficient permissions.");
+            }
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            _logger.LogInformation("Accounting user logged out.");
+            return RedirectToAction(nameof(Login), "Account", new { area = "Accounting" });
+        }
+    }
+
+    public class LoginViewModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+}
