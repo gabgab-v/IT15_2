@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 
 namespace IT15.Areas.Identity.Pages.Account
 {
@@ -30,54 +29,26 @@ namespace IT15.Areas.Identity.Pages.Account
             _logger = logger;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public bool RememberMe { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Text)]
             [Display(Name = "Authenticator code")]
             public string TwoFactorCode { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Display(Name = "Remember this machine")]
             public bool RememberMachine { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync(bool rememberMe, string returnUrl = null)
         {
-            // Ensure the user has gone through the username & password screen first
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
-
             if (user == null)
             {
                 throw new InvalidOperationException($"Unable to load two-factor authentication user.");
@@ -96,8 +67,6 @@ namespace IT15.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            returnUrl = returnUrl ?? Url.Content("~/");
-
             var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
             if (user == null)
             {
@@ -105,15 +74,29 @@ namespace IT15.Areas.Identity.Pages.Account
             }
 
             var authenticatorCode = Input.TwoFactorCode.Replace(" ", string.Empty).Replace("-", string.Empty);
-
             var result = await _signInManager.TwoFactorAuthenticatorSignInAsync(authenticatorCode, rememberMe, Input.RememberMachine);
-
-            var userId = await _userManager.GetUserIdAsync(user);
 
             if (result.Succeeded)
             {
                 _logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
-                return LocalRedirect(returnUrl);
+
+                // --- THE KEY CHANGE: ROLE-BASED REDIRECTION ---
+                // After a successful login, check the user's role and redirect to the correct dashboard.
+                if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                }
+                if (await _userManager.IsInRoleAsync(user, "HumanResource"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "HumanResource" });
+                }
+                if (await _userManager.IsInRoleAsync(user, "Accounting"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "Accounting" });
+                }
+
+                // Default redirect for regular "User" role to the UserDashboard
+                return RedirectToAction("Index", "UserDashboard", new { area = "" });
             }
             else if (result.IsLockedOut)
             {

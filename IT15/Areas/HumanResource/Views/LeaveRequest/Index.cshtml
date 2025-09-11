@@ -78,7 +78,7 @@
                             @if (request.Status == LeaveRequestStatus.Pending)
                             {
                                 <div class="flex items-center space-x-2">
-                                    <form asp-area="Admin" asp-controller="LeaveRequest" asp-action="Approve" asp-route-id="@request.Id" method="post">
+                                    <form asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Approve" asp-route-id="@request.Id" method="post">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="text-green-600 hover:text-green-900">Approve</button>
                                     </form>

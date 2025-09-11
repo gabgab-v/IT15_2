@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using IT15.Models; // Add this if you use ApplicationUser in the future
 
 namespace IT15.Areas.HumanResource.Controllers
 {
@@ -37,30 +36,40 @@ namespace IT15.Areas.HumanResource.Controllers
 
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                // First, check the password and get the sign-in result.
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+
                 if (result.Succeeded)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Email);
-                    // SECURITY CHECK: Ensure the user logging in has the correct role.
-                    if (await _userManager.IsInRoleAsync(user, "HumanResource") || await _userManager.IsInRoleAsync(user, "Admin"))
+                    // Now, verify the role after a successful password sign-in.
+                    if (user != null && (await _userManager.IsInRoleAsync(user, "HumanResource") || await _userManager.IsInRoleAsync(user, "Admin")))
                     {
                         _logger.LogInformation("HR user logged in.");
                         return LocalRedirect(returnUrl);
                     }
                     else
                     {
-                        // Log them out immediately if they are not HR/Admin
+                        // If the role is wrong, sign them out immediately.
                         await _signInManager.SignOutAsync();
                         ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
                         return View(model);
                     }
                 }
-                else
+                if (result.RequiresTwoFactor)
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return View(model);
+                    _logger.LogInformation("User requires two-factor authentication.");
+                    return RedirectToPage("/Account/LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe, Area = "Identity" });
                 }
+                if (result.IsLockedOut)
+                {
+                    _logger.LogWarning("User account locked out.");
+                    return RedirectToPage("/Account/Lockout", new { Area = "Identity" });
+                }
+
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             }
+
             return View(model);
         }
 
@@ -72,8 +81,6 @@ namespace IT15.Areas.HumanResource.Controllers
             _logger.LogInformation("HR user logged out.");
             return RedirectToAction(nameof(Login), "Account", new { area = "HumanResource" });
         }
-
-
     }
 
     public class LoginViewModel
@@ -90,3 +97,4 @@ namespace IT15.Areas.HumanResource.Controllers
         public bool RememberMe { get; set; }
     }
 }
+

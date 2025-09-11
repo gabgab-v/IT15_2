@@ -1,55 +1,48 @@
 ﻿using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Configuration;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text; // Required for StringContent and Encoding
-using System.Text.Json; // Required for JsonSerializer
+using System.Net;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace IT15.Services
 {
     public class EmailSender : IEmailSender
     {
-        // This service no longer needs IConfiguration injected.
-        public EmailSender()
+        private readonly IConfiguration _configuration;
+
+        public EmailSender(IConfiguration configuration)
         {
+            _configuration = configuration;
         }
 
-        public async Task SendEmailAsync(string email, string subject, string htmlMessage)
+        public Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            // THE FIX: Hardcode your API key here for the final test.
-            // Replace "re_YourApiKeyFromResend" with your actual key.
-            var apiKey = "re_YourApiKeyFromResend";
+            // Read SMTP settings from appsettings.json
+            var smtpSettings = _configuration.GetSection("SmtpSettings");
+            var smtpServer = smtpSettings["Server"];
+            var smtpPort = int.Parse(smtpSettings["Port"]);
+            var smtpUsername = smtpSettings["Username"];
+            var smtpPassword = smtpSettings["Password"]; // This is your App Password
 
-            if (string.IsNullOrEmpty(apiKey) || apiKey == "re_DXsdeabQ_KHxgBA5J91xdEvoLgepvXC1K")
+            // Create the SMTP client
+            var client = new SmtpClient(smtpServer)
             {
-                throw new System.Exception("API Key is not set in EmailSender.cs. Please replace the placeholder.");
-            }
-
-            // 1. Manually create and configure the HttpClient.
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            // 2. Create the JSON payload for the Resend API.
-            var payload = new
-            {
-                from = "onboarding@resend.dev",
-                to = email,
-                subject = subject,
-                html = htmlMessage
+                Port = smtpPort,
+                Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                EnableSsl = true, // Gmail requires SSL
             };
-            var jsonPayload = JsonSerializer.Serialize(payload);
-            var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-            // 3. Send the POST request directly to the Resend API endpoint.
-            var response = await httpClient.PostAsync("https://api.resend.com/emails", content);
-
-            // 4. Check the response. If it's not successful, throw an exception with the error details.
-            if (!response.IsSuccessStatusCode)
+            // Create the email message
+            var mailMessage = new MailMessage
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new System.Exception($"Resend API call failed with status code {response.StatusCode}: {errorContent}");
-            }
+                From = new MailAddress(smtpUsername, "OpenBook HRIS"),
+                Subject = subject,
+                Body = htmlMessage,
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(email);
+
+            // Send the email
+            return client.SendMailAsync(mailMessage);
         }
     }
 }

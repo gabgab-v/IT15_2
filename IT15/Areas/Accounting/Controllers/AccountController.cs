@@ -39,11 +39,23 @@ namespace IT15.Areas.Accounting.Controllers
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user != null && (await _userManager.IsInRoleAsync(user, "Accounting") || await _userManager.IsInRoleAsync(user, "Admin")))
                 {
-                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false);
+                    // THE CHANGE: Use a different PasswordSignInAsync overload that doesn't sign the user in yet, only checks the password.
+                    var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+
                     if (result.Succeeded)
                     {
                         _logger.LogInformation("Accounting user logged in.");
                         return LocalRedirect(returnUrl);
+                    }
+                    if (result.RequiresTwoFactor)
+                    {
+                        _logger.LogInformation("User requires two-factor authentication.");
+                        return RedirectToPage("/Account/LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe, Area = "Identity" });
+                    }
+                    if (result.IsLockedOut)
+                    {
+                        _logger.LogWarning("User account locked out.");
+                        return RedirectToPage("/Account/Lockout", new { Area = "Identity" });
                     }
                 }
 
@@ -76,3 +88,4 @@ namespace IT15.Areas.Accounting.Controllers
         public bool RememberMe { get; set; }
     }
 }
+

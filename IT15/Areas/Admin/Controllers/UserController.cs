@@ -121,18 +121,20 @@ namespace IT15.Areas.Admin.Controllers
             var user = await _userManager.FindByIdAsync(id);
             if (user == null) return NotFound();
 
+            var userRoles = await _userManager.GetRolesAsync(user);
+
             var model = new EditUserViewModel
             {
                 Id = user.Id,
                 Email = user.Email,
-                UserRoles = await _userManager.GetRolesAsync(user),
-                AllRoles = await _roleManager.Roles.ToListAsync() // Get all available roles
+                // Get the user's single role (or the first one if they have multiple)
+                UserRole = userRoles.FirstOrDefault(),
+                AllRoles = await _roleManager.Roles.ToListAsync()
             };
 
             return View(model);
         }
 
-        // POST: /Admin/User/Edit/{id} (UPDATED)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditUserViewModel model)
@@ -142,42 +144,34 @@ namespace IT15.Areas.Admin.Controllers
             var user = await _userManager.FindByIdAsync(model.Id);
             if (user == null) return NotFound();
 
-            // --- Password Update Logic (Unchanged) ---
+            // Update password logic (remains the same)
             if (!string.IsNullOrEmpty(model.NewPassword))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var passResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
-                if (!passResult.Succeeded)
+                var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+                if (!result.Succeeded)
                 {
-                    foreach (var error in passResult.Errors) ModelState.AddModelError(string.Empty, error.Description);
-                    return View(model);
-                }
-            }
-
-            // --- ROLE UPDATE LOGIC ---
-            var currentUserRoles = await _userManager.GetRolesAsync(user);
-            var selectedRoles = model.SelectedRoles ?? new List<string>();
-
-            // Prevent removing the last administrator
-            if (currentUserRoles.Contains("Admin") && !selectedRoles.Contains("Admin"))
-            {
-                var admins = await _userManager.GetUsersInRoleAsync("Admin");
-                if (admins.Count == 1 && admins[0].Id == user.Id)
-                {
-                    ModelState.AddModelError(string.Empty, "Cannot remove the last administrator role from the system.");
-                    // Re-populate data for the view
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
                     model.AllRoles = await _roleManager.Roles.ToListAsync();
-                    model.UserRoles = currentUserRoles;
                     return View(model);
                 }
             }
 
-            var rolesToAdd = selectedRoles.Except(currentUserRoles);
-            var rolesToRemove = currentUserRoles.Except(selectedRoles);
+            // --- NEW ROLE UPDATE LOGIC ---
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            // Remove user from all their current roles
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            // Add user to the single new role that was selected
+            if (!string.IsNullOrEmpty(model.SelectedRole))
+            {
+                await _userManager.AddToRoleAsync(user, model.SelectedRole);
+            }
+            // --- END OF NEW ROLE LOGIC ---
 
-            await _userManager.AddToRolesAsync(user, rolesToAdd);
-            await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
-
+            await _userManager.UpdateAsync(user);
             return RedirectToAction("Index");
         }
     }

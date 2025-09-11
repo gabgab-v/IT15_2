@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation; // Add this using directive
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -16,16 +17,17 @@ namespace IT15.ViewModels.Admin
         [Display(Name = "New Password (optional)")]
         public string? NewPassword { get; set; }
 
-        // THE FIX: Add these properties to hold role information
+        // THE FIX: Add the [ValidateNever] attribute.
+        // This tells the application not to require a value for this property
+        // when the form is submitted.
+        [ValidateNever]
+        public string UserRole { get; set; }
 
-        // This will hold ALL roles from the database for display in the view
+        // This property receives the single role selected from the radio buttons.
+        public string SelectedRole { get; set; }
+
+        // This holds all possible roles to build the radio button list.
         public List<IdentityRole> AllRoles { get; set; } = new List<IdentityRole>();
-
-        // This will hold the names of the roles the user is currently in
-        public IList<string> UserRoles { get; set; } = new List<string>();
-
-        // This property will receive the list of selected roles from the form submission
-        public List<string> SelectedRoles { get; set; } = new List<string>();
     }
 }
 

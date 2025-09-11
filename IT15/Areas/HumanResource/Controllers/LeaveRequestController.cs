@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using IT15.Models;
+using IT15.Services;
 
 namespace IT15.Areas.HumanResource.Controllers
 {
@@ -17,11 +18,13 @@ namespace IT15.Areas.HumanResource.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ISmsSender _smsSender;
 
-        public LeaveRequestController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public LeaveRequestController(ApplicationDbContext context, UserManager<IdentityUser> userManager, ISmsSender smsSender)
         {
             _context = context;
             _userManager = userManager;
+            _smsSender = smsSender;
         }
 
         public async Task<IActionResult> Index(string searchString, string statusFilter)
@@ -49,13 +52,21 @@ namespace IT15.Areas.HumanResource.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(int id)
         {
-            var request = await _context.LeaveRequests.FindAsync(id);
+            var request = await _context.LeaveRequests
+                .Include(r => r.RequestingEmployee)
+                .FirstOrDefaultAsync(r => r.Id == id);
             if (request != null)
             {
                 request.Status = LeaveRequestStatus.Approved;
                 request.DateActioned = DateTime.Now;
                 request.ApprovedById = _userManager.GetUserId(User);
                 await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(request.RequestingEmployee.PhoneNumber))
+                {
+                    var message = $"Your leave request from {request.StartDate:MMM dd} to {request.EndDate:MMM dd, yyyy} has been approved.";
+                    await _smsSender.SendSmsAsync(request.RequestingEmployee.PhoneNumber, message);
+                }
             }
             return RedirectToAction(nameof(Index));
         }

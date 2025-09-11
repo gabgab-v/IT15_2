@@ -28,6 +28,7 @@ builder.Logging.AddConsole();
 
 // 1. Register your custom EmailSender service
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddTransient<ISmsSender, SmsSender>();
 
 // Configure Resend using the recommended IHttpClientFactory approach.
 

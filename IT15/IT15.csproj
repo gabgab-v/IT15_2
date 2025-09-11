@@ -20,6 +20,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
     <PackageReference Include="Resend" Version="0.1.5" />
+    <PackageReference Include="Twilio" Version="7.13.0" />
   </ItemGroup>
 
 </Project>
