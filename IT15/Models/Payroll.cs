@@ -34,6 +34,8 @@ namespace IT15.Models
         public IdentityUser? ApprovedBy { get; set; }
         public DateTime? DateApproved { get; set; }
 
+        public bool IsArchived { get; set; } = false;
+
         public ICollection<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
     }
 }

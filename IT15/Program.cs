@@ -29,6 +29,12 @@ builder.Logging.AddConsole();
 // 1. Register your custom EmailSender service
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<ISmsSender, SmsSender>();
+builder.Services.AddHttpClient<HolidayApiService>();
+
+builder.Services.AddHttpClient<IncomeApiService>(client =>
+{
+    client.BaseAddress = new Uri("https://fakestoreapi.com/");
+});
 
 // Configure Resend using the recommended IHttpClientFactory approach.
 

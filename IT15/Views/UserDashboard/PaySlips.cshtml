@@ -19,8 +19,8 @@
                         <h3 class="text-xl font-bold text-gray-900">Pay Slip for @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
                         <p class="text-sm text-gray-500">Employee: @slip.Employee?.Email</p>
                     </div>
-                    <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
-                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+                    <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                         Print
                     </button>
                 </div>
@@ -73,33 +73,40 @@
         function printPayslip(payslipId) {
             const payslipContent = document.getElementById(payslipId);
             if (!payslipContent) {
-                alert('Error: Payslip content not found.');
+                console.error('Error: Payslip content not found for ID:', payslipId);
+                
+                alert('Error: Could not find payslip content to print.');
                 return;
             }
 
-            const printWindow = window.open('', '', 'height=700,width=900');
+            const printWindow = window.open('', '', 'height=800,width=1000');
             if (!printWindow) {
-                alert('Please disable your pop-up blocker.');
+                alert('Could not open print window. Please disable your pop-up blocker and try again.');
                 return;
             }
 
-            // This HTML string includes your payslip content.
-            // Be sure to change "/css/site.css" to the correct path for your project's stylesheet.
+            
+            const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                .map(sheet => sheet.outerHTML)
+                .join('');
+
             const htmlContent = `
-                        <html>
+                        <!DOCTYPE html>
+                        <html lang="en">
                         <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
                             <title>Print Payslip</title>
-                            <link rel="stylesheet" href="/css/site.css">
+                            ${stylesheets}
                             <style>
-                                /* Add any print-specific styles here */
+                                /* Optional: Add print-specific styles */
                                 body {
                                     padding: 2rem;
-                                    background-color: white;
+                                    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
                                 }
                             </style>
                         </head>
                         <body>
-                            <h1>Pay Slip Details</h1>
                             ${payslipContent.innerHTML}
                         </body>
                         </html>
@@ -108,22 +115,28 @@
             printWindow.document.write(htmlContent);
             printWindow.document.close();
 
-            setTimeout(() => {
+            printWindow.onload = function () {
+                printWindow.focus(); 
                 printWindow.print();
-                printWindow.close();
-            }, 500);
+                printWindow.close(); 
+            };
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            const printButtons = document.querySelectorAll('.print-button');
+            
+            console.log("Payslip script loaded. Attaching print button listeners...");
 
+            const printButtons = document.querySelectorAll('.print-button');
             printButtons.forEach(button => {
                 button.addEventListener('click', function () {
                     const payslipId = this.dataset.payslipid;
-                    printPayslip(payslipId);
+                    if (payslipId) {
+                        printPayslip(payslipId);
+                    } else {
+                        console.error("Could not find payslip ID on button:", this);
+                    }
                 });
             });
         });
     </script>
-} // <-- This closing brace is crucial and was likely missing.
-
+}

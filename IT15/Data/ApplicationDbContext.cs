@@ -17,5 +17,27 @@ namespace IT15.Data
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<Payroll> Payrolls { get; set; }
         public DbSet<PaySlip> PaySlips { get; set; }
+        public DbSet<CompanyLedger> CompanyLedger { get; set; }
+
+        public DbSet<OvertimeRequest> OvertimeRequests { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // This configuration tells Entity Framework not to use cascade delete
+            // for the OvertimeRequest's relationship to the user, which prevents the error.
+            builder.Entity<OvertimeRequest>()
+                .HasOne(o => o.RequestingEmployee)
+                .WithMany()
+                .HasForeignKey(o => o.RequestingEmployeeId)
+                .OnDelete(DeleteBehavior.Restrict); // This is the key change
+
+            builder.Entity<OvertimeRequest>()
+                .HasOne(o => o.ApprovedBy)
+                .WithMany()
+                .HasForeignKey(o => o.ApprovedById)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

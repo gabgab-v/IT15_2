@@ -2,70 +2,74 @@
 @using Microsoft.AspNetCore.Http.Features
 @model TwoFactorAuthenticationModel
 @{
-    ViewData["Title"] = "Two-factor authentication (2FA)";
+    ViewData["Title"] = "Two-Factor Authentication (2FA)";
     ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
 }
 
 <partial name="_StatusMessage" for="StatusMessage" />
-<h3>@ViewData["Title"]</h3>
-@{
-    var consentFeature = HttpContext.Features.Get<ITrackingConsentFeature>();
-    @if (consentFeature?.CanTrack ?? true)
+<h3 class="text-xl font-semibold text-gray-800">@ViewData["Title"]</h3>
+
+<div class="mt-6 space-y-8">
+    @if (Model.Is2faEnabled)
     {
-        @if (Model.Is2faEnabled)
+        <!-- Recovery Codes Warning -->
+        @if (Model.RecoveryCodesLeft == 0)
         {
-            if (Model.RecoveryCodesLeft == 0)
-            {
-                <div class="alert alert-danger">
-                    <strong>You have no recovery codes left.</strong>
-                    <p>You must <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
-                </div>
-            }
-            else if (Model.RecoveryCodesLeft == 1)
-            {
-                <div class="alert alert-danger">
-                    <strong>You have 1 recovery code left.</strong>
-                    <p>You can <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
-                </div>
-            }
-            else if (Model.RecoveryCodesLeft <= 3)
-            {
-                <div class="alert alert-warning">
-                    <strong>You have @Model.RecoveryCodesLeft recovery codes left.</strong>
-                    <p>You should <a asp-page="./GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
-                </div>
-            }
-
-            if (Model.IsMachineRemembered)
-            {
-                <form method="post" style="display: inline-block">
-                    <button type="submit" class="btn btn-primary">Forget this browser</button>
-                </form>
-            }
-            <a asp-page="./Disable2fa" class="btn btn-primary">Disable 2FA</a>
-            <a asp-page="./GenerateRecoveryCodes" class="btn btn-primary">Reset recovery codes</a>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+                <p class="font-bold">You have no recovery codes left.</p>
+                <p>You must <a asp-page="./GenerateRecoveryCodes" class="font-medium text-red-800 hover:underline">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
+            </div>
         }
+        else if (Model.RecoveryCodesLeft <= 3)
+        {
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+                <p class="font-bold">You have @Model.RecoveryCodesLeft recovery codes left.</p>
+                <p>You should <a asp-page="./GenerateRecoveryCodes" class="font-medium text-yellow-800 hover:underline">generate a new set of recovery codes</a>.</p>
+            </div>
+        }
+    }
 
-        <h4>Authenticator app</h4>
+    <!-- Authenticator App Card -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h4 class="text-lg font-medium text-gray-900">Authenticator App</h4>
         @if (!Model.HasAuthenticator)
         {
-            <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Add authenticator app</a>
+            <p class="mt-1 text-sm text-gray-600">You have not configured an authenticator app. Set one up for enhanced security.</p>
+            <div class="mt-4">
+                <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="inline-block bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">Add authenticator app</a>
+            </div>
         }
         else
         {
-            <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="btn btn-primary">Set up authenticator app</a>
-            <a id="reset-authenticator" asp-page="./ResetAuthenticator" class="btn btn-primary">Reset authenticator app</a>
+            <p class="mt-1 text-sm text-gray-600">Your authenticator app has been configured.</p>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <a id="enable-authenticator" asp-page="./EnableAuthenticator" class="inline-block bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">Set up authenticator app</a>
+                <a id="reset-authenticator" asp-page="./ResetAuthenticator" class="inline-block bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-300">Reset authenticator app</a>
+            </div>
         }
-    }
-    else
+    </div>
+
+    <!-- Other 2FA Actions Card -->
+    @if (Model.Is2faEnabled)
     {
-        <div class="alert alert-danger">
-            <strong>Privacy and cookie policy have not been accepted.</strong>
-            <p>You must accept the policy before you can enable two factor authentication.</p>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h4 class="text-lg font-medium text-gray-900">General Actions</h4>
+            <p class="mt-1 text-sm text-gray-600">Manage your 2FA settings and recovery options.</p>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <a asp-page="./Disable2fa" class="inline-block bg-red-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-red-700">Disable 2FA</a>
+                <a asp-page="./GenerateRecoveryCodes" class="inline-block bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-300">Reset recovery codes</a>
+                @if (Model.IsMachineRemembered)
+                {
+                    <form method="post" class="w-full sm:w-auto">
+                        <button type="submit" class="w-full bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-300">Forget this browser</button>
+                    </form>
+                }
+            </div>
         </div>
     }
-}
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+

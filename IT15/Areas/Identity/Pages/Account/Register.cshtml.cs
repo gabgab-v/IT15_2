@@ -1,15 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See License.txt in the project root for license information.
-
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -48,12 +45,9 @@ namespace IT15.Areas.Identity.Pages.Account
 
         [BindProperty]
         public InputModel Input { get; set; }
-
         public string ReturnUrl { get; set; }
-
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
-        // THE VIEWMODEL: Add the new properties here.
         public class InputModel
         {
             [Required]
@@ -65,8 +59,14 @@ namespace IT15.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
+            // THE CHANGE: Added a property for the country code dropdown
+            [Display(Name = "Country Code")]
+            public string CountryCode { get; set; } = "+63"; // Default to Philippines
+
+            // THE CHANGE: Updated validation to be more generic for international numbers
             [Phone]
-            [Display(Name = "Phone Number (optional)")]
+            [Display(Name = "Phone Number")]
+            [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Please enter a valid phone number (7-15 digits).")]
             public string PhoneNumber { get; set; }
 
             [Required]
@@ -80,7 +80,6 @@ namespace IT15.Areas.Identity.Pages.Account
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
         }
-
 
         public async Task OnGetAsync(string returnUrl = null)
         {
@@ -96,17 +95,19 @@ namespace IT15.Areas.Identity.Pages.Account
             {
                 var user = CreateUser();
 
-                // THE LOGIC: Set the new properties on the user object.
-                user.PhoneNumber = Input.PhoneNumber;
+                // THE CHANGE: Combine the country code and phone number before saving.
+                if (!string.IsNullOrEmpty(Input.PhoneNumber))
+                {
+                    user.PhoneNumber = Input.CountryCode + Input.PhoneNumber;
+                }
+
                 await _userStore.SetUserNameAsync(user, Input.Username, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
-
                     await _userManager.AddToRoleAsync(user, "User");
 
                     var userId = await _userManager.GetUserIdAsync(user);
@@ -136,7 +137,6 @@ namespace IT15.Areas.Identity.Pages.Account
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
-
             return Page();
         }
 

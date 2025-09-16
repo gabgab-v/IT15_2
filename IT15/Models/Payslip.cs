@@ -23,6 +23,8 @@ namespace IT15.Models
         [ForeignKey("EmployeeId")]
         public IdentityUser Employee { get; set; }
 
+        public int DaysAbsent { get; set; }
+
         // Earnings
         [Column(TypeName = "decimal(18, 2)")]
         public decimal BasicSalary { get; set; }

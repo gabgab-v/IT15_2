@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.UI.Services;
-using System.Net;
-using System.Net.Mail;
+using Microsoft.Extensions.Configuration;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using System.Threading.Tasks;
 
 namespace IT15.Services
@@ -14,36 +15,36 @@ namespace IT15.Services
             _configuration = configuration;
         }
 
-        public Task SendEmailAsync(string email, string subject, string htmlMessage)
+        public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            // Read SMTP settings from appsettings.json
-            var smtpSettings = _configuration.GetSection("SmtpSettings");
-            var smtpServer = smtpSettings["Server"];
-            var smtpPort = int.Parse(smtpSettings["Port"]);
-            var smtpUsername = smtpSettings["Username"];
-            var smtpPassword = smtpSettings["Password"]; // This is your App Password
+            // Get SendGrid settings from appsettings.json
+            var apiKey = _configuration["SendGrid:ApiKey"];
+            var fromEmail = _configuration["SendGrid:FromEmail"];
+            var fromName = _configuration["SendGrid:FromName"];
 
-            // Create the SMTP client
-            var client = new SmtpClient(smtpServer)
+            if (string.IsNullOrEmpty(apiKey))
             {
-                Port = smtpPort,
-                Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-                EnableSsl = true, // Gmail requires SSL
-            };
+                throw new System.Exception("SendGrid API Key is not configured.");
+            }
 
-            // Create the email message
-            var mailMessage = new MailMessage
+            var client = new SendGridClient(apiKey);
+            var from = new EmailAddress(fromEmail, fromName);
+            var to = new EmailAddress(email);
+
+            // Per SendGrid's recommendation, you should provide both plain text and HTML content.
+            // For simplicity, we'll use the htmlMessage for both, as most modern clients will render the HTML.
+            var plainTextContent = htmlMessage;
+            var htmlContent = htmlMessage;
+
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+            var response = await client.SendEmailAsync(msg);
+
+            if (!response.IsSuccessStatusCode)
             {
-                From = new MailAddress(smtpUsername, "OpenBook HRIS"),
-                Subject = subject,
-                Body = htmlMessage,
-                IsBodyHtml = true,
-            };
-            mailMessage.To.Add(email);
-
-            // Send the email
-            return client.SendMailAsync(mailMessage);
+                // Log the error or handle it as needed
+                var error = await response.Body.ReadAsStringAsync();
+                throw new System.Exception($"SendGrid failed to send email: {response.StatusCode} - {error}");
+            }
         }
     }
 }
-

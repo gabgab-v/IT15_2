@@ -43,22 +43,22 @@
             <!-- Validation summary -->
             <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
 
-            <div class="rounded-md shadow-sm -space-y-px">
-                <!-- Email -->
+            <!-- THE CHANGE: The input fields are now in a container with vertical spacing -->
+            <div class="space-y-4">
                 <div>
-                    <label for="Input_Email" class="sr-only">Email address</label>
-                    <input asp-for="Input.Email" id="Input_Email" name="Input.Email" type="email" autocomplete="username" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Email address" />
-                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs"></span>
+                    <!-- THE FIX: Changed asp-for from Input.Email to Input.Login -->
+                    <label asp-for="Input.Login" class="block text-sm font-medium text-gray-700"></label>
+                    <input asp-for="Input.Login" type="text" autocomplete="username" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Username or Email" />
+                    <span asp-validation-for="Input.Login" class="text-red-500 text-xs"></span>
                 </div>
 
-                <!-- Password -->
                 <div>
-                    <label for="Input_Password" class="sr-only">Password</label>
-                    <input asp-for="Input.Password" id="Input_Password" name="Input.Password" type="password" autocomplete="current-password" required
-                           class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                           placeholder="Password" />
+                    <label asp-for="Input.Password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input asp-for="Input.Password" type="password" autocomplete="current-password" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="••••••••" />
                     <span asp-validation-for="Input.Password" class="text-red-500 text-xs"></span>
                 </div>
             </div>
@@ -66,7 +66,7 @@
             <!-- Remember Me -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <input asp-for="Input.RememberMe" id="remember-me" name="Input.RememberMe" type="checkbox"
+                    <input asp-for="Input.RememberMe" type="checkbox"
                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
                     <label asp-for="Input.RememberMe" class="ml-2 block text-sm text-gray-900">
                         Remember me

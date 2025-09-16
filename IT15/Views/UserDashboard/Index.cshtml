@@ -1,5 +1,5 @@
 ﻿@model IT15.ViewModels.UserDashboardViewModel
-@using IT15.ViewModels 
+@using IT15.ViewModels
 
 @{
     ViewData["Title"] = "My Dashboard";
@@ -35,7 +35,7 @@
                     <p class="text-gray-700 mb-4">You are currently checked in. Don't forget to check out at the end of your day.</p>
                     <form asp-action="CheckOut" asp-controller="UserDashboard" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700">
+                        <button type="submit" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700">
                             Check Out
                         </button>
                     </form>
@@ -69,7 +69,7 @@
     <div class="space-y-6">
         <!-- Upcoming Time Off -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700 mb-3">Upcoming Leave if Approved</h3>
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Upcoming Approved Leave</h3>
             @if (Model.UpcomingLeave != null)
             {
                 <div class="bg-gray-50 p-4 rounded-md">
@@ -83,9 +83,9 @@
             }
         </div>
 
-        <!-- Pending Requests -->
+        <!-- Pending Leave Requests -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700 mb-3">Pending Requests</h3>
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Pending Leave Requests</h3>
             @if (Model.PendingLeaveRequestsCount > 0)
             {
                 <p class="text-2xl font-bold text-blue-600">@Model.PendingLeaveRequestsCount</p>
@@ -95,6 +95,22 @@
             {
                 <p class="text-sm text-gray-500">You have no pending leave requests.</p>
             }
+        </div>
+
+        <!-- THE CHANGE: New Overtime Summary Card -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Overtime Summary</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm text-gray-500">Approved OT this month</p>
+                    <p class="text-2xl font-bold text-gray-800">@Model.ApprovedOvertimeHoursThisMonth.ToString("F2") <span class="text-base font-normal">hours</span></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Pending OT requests</p>
+                    <p class="text-2xl font-bold text-blue-600">@Model.PendingOvertimeRequestsCount</p>
+                </div>
+            </div>
+            <a asp-action="OvertimeRequests" class="text-blue-600 hover:underline mt-4 inline-block font-medium text-sm">Manage Overtime &rarr;</a>
         </div>
     </div>
 </div>

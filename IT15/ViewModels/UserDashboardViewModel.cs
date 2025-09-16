@@ -7,6 +7,8 @@ namespace IT15.ViewModels
         public TodayAttendanceStatus AttendanceStatus { get; set; }
         public LeaveRequest? UpcomingLeave { get; set; }
         public int PendingLeaveRequestsCount { get; set; }
+        public int PendingOvertimeRequestsCount { get; set; }
+        public decimal ApprovedOvertimeHoursThisMonth { get; set; }
     }
 
     public enum TodayAttendanceStatus

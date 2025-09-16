@@ -1,0 +1,53 @@
+﻿@model IT15.Models.OvertimeRequest
+
+@{
+    ViewData["Title"] = "Apply for Overtime";
+}
+
+<div class="border-b border-gray-200 pb-4 mb-6">
+    <a asp-action="OvertimeRequests" class="text-blue-600 hover:underline text-sm mb-2 inline-block">&larr; Back to My Requests</a>
+    <h2 class="text-2xl font-bold text-gray-900">New Overtime Request</h2>
+    <p class="text-gray-500 mt-1">Please fill out the details for your overtime request.</p>
+</div>
+
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-2xl">
+    <form asp-action="ApplyForOvertime" method="post" class="space-y-6">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-red-600 mb-4 bg-red-50 p-3 rounded-md"></div>
+
+        <div>
+            <label asp-for="OvertimeDate" class="block text-sm font-medium text-gray-700"></label>
+            <input asp-for="OvertimeDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            <span asp-validation-for="OvertimeDate" class="text-red-600 text-sm"></span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label asp-for="StartTime" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="StartTime" type="time" value="18:00" readonly
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md
+              shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <span asp-validation-for="StartTime" class="text-red-600 text-sm"></span>
+            </div>
+            <div>
+                <label asp-for="EndTime" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="EndTime" type="time" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+                <span asp-validation-for="EndTime" class="text-red-600 text-sm"></span>
+            </div>
+        </div>
+
+        <div>
+            <label asp-for="Reason" class="block text-sm font-medium text-gray-700"></label>
+            <textarea asp-for="Reason" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <span asp-validation-for="Reason" class="text-red-600 text-sm"></span>
+        </div>
+
+        <div class="mt-8">
+            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700">
+                Submit Request
+            </button>
+        </div>
+    </form>
+</div>
+

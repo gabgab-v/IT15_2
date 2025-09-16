@@ -22,6 +22,35 @@ namespace IT15.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("IT15.Models.CompanyLedger", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CompanyLedger");
+                });
+
             modelBuilder.Entity("IT15.Models.DailyLog", b =>
                 {
                     b.Property<int>("Id")
@@ -36,11 +65,22 @@ namespace IT15.Data.Migrations
                     b.Property<DateTime?>("CheckOutTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("OvertimeHours")
+                        .HasColumnType("decimal(5, 2)");
+
+                    b.Property<int>("OvertimeStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("DailyLogs");
                 });
@@ -88,6 +128,52 @@ namespace IT15.Data.Migrations
                     b.ToTable("LeaveRequests");
                 });
 
+            modelBuilder.Entity("IT15.Models.OvertimeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("DateActioned")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateRequested")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<DateTime>("OvertimeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("RequestingEmployeeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("RequestingEmployeeId");
+
+                    b.ToTable("OvertimeRequests");
+                });
+
             modelBuilder.Entity("IT15.Models.PaySlip", b =>
                 {
                     b.Property<int>("Id")
@@ -101,6 +187,9 @@ namespace IT15.Data.Migrations
 
                     b.Property<decimal>("BasicSalary")
                         .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("DaysAbsent")
+                        .HasColumnType("int");
 
                     b.Property<string>("EmployeeId")
                         .IsRequired()
@@ -158,6 +247,9 @@ namespace IT15.Data.Migrations
 
                     b.Property<DateTime>("DateGenerated")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("PayrollMonth")
                         .HasColumnType("datetime2");
@@ -396,6 +488,28 @@ namespace IT15.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("IT15.Models.CompanyLedger", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT15.Models.DailyLog", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("IT15.Models.LeaveRequest", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ApprovedBy")
@@ -405,6 +519,23 @@ namespace IT15.Data.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "RequestingEmployee")
                         .WithMany()
                         .HasForeignKey("RequestingEmployeeId");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("RequestingEmployee");
+                });
+
+            modelBuilder.Entity("IT15.Models.OvertimeRequest", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "RequestingEmployee")
+                        .WithMany()
+                        .HasForeignKey("RequestingEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ApprovedBy");
 

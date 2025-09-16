@@ -2,7 +2,7 @@
 @model RegisterModel
 @{
     ViewData["Title"] = "Register";
-    Layout = null; // Use a clean layout without the main navigation for a focused experience
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -12,8 +12,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - OpenBook HRIS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -21,11 +19,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
 
     <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
         <div>
-            <!-- Branding -->
             <div class="flex justify-center items-center mb-6">
                 <img src="https://placehold.co/50x50/3b82f6/ffffff?text=OB" alt="OpenBook Logo" class="rounded-full">
                 <span class="ml-4 text-3xl font-bold text-gray-800">OpenBook</span>
@@ -36,60 +33,56 @@
             </p>
         </div>
 
-        <!-- Register Form -->
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="mt-8 space-y-6">
+        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="mt-8 space-y-4">
             @Html.AntiForgeryToken()
-
-            <!-- Validation summary -->
             <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
 
-            <div class="rounded-md shadow-sm -space-y-px">
-                <!-- Username -->
-                <div>
-                    <label asp-for="Input.Username" class="sr-only"></label>
-                    <input asp-for="Input.Username" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Username" />
-                    <span asp-validation-for="Input.Username" class="text-red-500 text-xs px-3"></span>
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <label asp-for="Input.Email" class="sr-only"></label>
-                    <input asp-for="Input.Email" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Email address" />
-                    <span asp-validation-for="Input.Email" class="text-red-500 text-xs px-3"></span>
-                </div>
-
-                <!-- Phone Number -->
-                <div>
-                    <label asp-for="Input.PhoneNumber" class="sr-only"></label>
-                    <input asp-for="Input.PhoneNumber" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Phone Number (optional)" />
-                    <span asp-validation-for="Input.PhoneNumber" class="text-red-500 text-xs px-3"></span>
-                </div>
-
-                <!-- Password -->
-                <div>
-                    <label asp-for="Input.Password" class="sr-only"></label>
-                    <input asp-for="Input.Password" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Password" />
-                    <span asp-validation-for="Input.Password" class="text-red-500 text-xs px-3"></span>
-                </div>
-
-                <!-- Confirm Password -->
-                <div>
-                    <label asp-for="Input.ConfirmPassword" class="sr-only"></label>
-                    <input asp-for="Input.ConfirmPassword" class="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Confirm password" />
-                    <span asp-validation-for="Input.ConfirmPassword" class="text-red-500 text-xs px-3"></span>
-                </div>
+            <div>
+                <label asp-for="Input.Username" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Input.Username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Username" />
+                <span asp-validation-for="Input.Username" class="text-red-500 text-xs"></span>
             </div>
 
-            <!-- Register Button -->
             <div>
-                <button id="registerSubmit" type="submit"
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                <label asp-for="Input.Email" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Input.Email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Email address" />
+                <span asp-validation-for="Input.Email" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.PhoneNumber" class="block text-sm font-medium text-gray-700"></label>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                    <!-- THE CHANGE: Replaced the static span with a dropdown select -->
+                    <select asp-for="Input.CountryCode" class="block w-24 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-700 sm:text-sm">
+                        <option value="+63">PH +63</option>
+                        <option value="+1">USA +1</option>
+                        <option value="+44">UK +44</option>
+                        <option value="+61">AUS +61</option>
+                    </select>
+                    <input asp-for="Input.PhoneNumber" type="text" maxlength="10" class="flex-1 block w-full min-w-0 rounded-none rounded-r-md px-3 py-2 border border-gray-300" placeholder="9171234567" />
+                </div>
+                <span asp-validation-for="Input.PhoneNumber" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.Password" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Input.Password" type="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Password" />
+                <span asp-validation-for="Input.Password" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.ConfirmPassword" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Input.ConfirmPassword" type="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="Confirm password" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <button id="registerSubmit" type="submit" class="w-full flex justify-center py-3 px-4 mt-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
                     Register
                 </button>
             </div>
         </form>
 
-        <!-- Extra Links -->
         <div class="text-sm text-center mt-4">
             <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-blue-600 hover:text-blue-500">
                 Already have an account? Sign in
@@ -97,9 +90,6 @@
         </div>
     </div>
 
-    @section Scripts {
-        <partial name="_ValidationScriptsPartial" />
-    }
 </body>
 </html>
 

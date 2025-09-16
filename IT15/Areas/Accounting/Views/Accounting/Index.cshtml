@@ -1,42 +1,67 @@
-﻿    @model IEnumerable<IT15.Models.Payroll>
-
+﻿    @model IEnumerable<IT15.ViewModels.Accounting.PayrollApprovalViewModel>
 @{
     ViewData["Title"] = "Payroll Approval";
+    var currentTotalFunds = (decimal)ViewData["CurrentTotalFunds"];
 }
 
-<h2 class="text-2xl font-bold text-gray-900 mb-4">Pending Payroll Approvals</h2>
+<div class="border-b border-gray-200 pb-4 mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Payroll Approval</h2>
+    <p class="text-gray-500 mt-1">Review pending payrolls and approve budgets based on historical funds.</p>
+</div>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-        <p>@TempData["SuccessMessage"]</p>
+@if (TempData["SuccessMessage"] != null) { /* ... success message ... */ }
+@if (TempData["ErrorMessage"] != null) { /* ... error message ... */ }
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-green-300 mb-8">
+    <div class="flex items-center">
+        <div class="bg-green-100 p-3 rounded-full">
+            <i data-lucide="dollar-sign" class="w-6 h-6 text-green-600"></i>
+        </div>
+        <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Current Total Company Funds</p>
+            <p class="text-2xl font-bold text-gray-900">@currentTotalFunds.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
+        </div>
     </div>
-}
+</div>
 
 <div class="space-y-6">
-    @if (Model.Any())
+    @foreach (var item in Model)
     {
-        @foreach (var payroll in Model)
-        {
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-800">@payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
-                        <p class="text-sm text-gray-500">Total Net Pay: @payroll.PaySlips.Sum(p => p.NetPay).ToString("C")</p>
-                        <p class="text-sm text-gray-500">Total Employees: @payroll.PaySlips.Count()</p>
-                    </div>
-                    <form asp-action="ApproveBudget" asp-route-id="@payroll.Id" method="post">
+        var totalPayrollCost = item.Payroll.PaySlips.Sum(p => p.NetPay);
+        var canAfford = item.AvailableFundsForPeriod >= totalPayrollCost;
+        var isValidCost = totalPayrollCost >= 0;
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border @(canAfford && isValidCost ? "border-gray-200" : "border-red-400")">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">@item.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
+                    <p class="text-sm text-gray-500">Total Net Pay: @totalPayrollCost.ToString("C")</p>
+                    <p class="text-sm font-bold @(canAfford ? "text-green-600" : "text-red-600")">
+                        Funds Available for this Period: @item.AvailableFundsForPeriod.ToString("C")
+                    </p>
+                </div>
+
+                @if (canAfford && isValidCost)
+                {
+                    <form asp-action="ApproveBudget" asp-route-id="@item.Payroll.Id" method="post">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-green-700">
                             Approve Budget
                         </button>
                     </form>
-                </div>
+                }
+                else
+                {
+                    <div class="text-right">
+                        <button class="bg-gray-400 text-white font-medium py-2 px-4 rounded-lg cursor-not-allowed" disabled>
+                            Approve Budget
+                        </button>
+                        <p class="text-xs text-red-600 mt-1">@(isValidCost ? "Insufficient Funds" : "Invalid Payroll Total")</p>
+                    </div>
+                }
             </div>
-        }
-    }
-    else
-    {
-        <p class="text-gray-600">There are no payrolls currently pending budget approval.</p>
+        </div>
     }
 </div>
+
+

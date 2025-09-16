@@ -34,7 +34,9 @@ namespace IT15.Areas.Identity.Pages.Account
         {
             if (email == null)
             {
-                return RedirectToPage("/Index");
+                // THE FIX: Redirect to the main site's home page (HomeController's Index action)
+                // instead of the Identity area's Index page.
+                return RedirectToAction("Index", "Home", new { area = "" });
             }
 
             var user = await _userManager.FindByEmailAsync(email);
@@ -45,7 +47,7 @@ namespace IT15.Areas.Identity.Pages.Account
 
             Email = email;
 
-            // THE CHANGE: We no longer need to display a confirmation link on this page.
+            // We no longer need to display a confirmation link on this page.
             // The user must check their email.
             DisplayConfirmAccountLink = false;
 
@@ -53,3 +55,4 @@ namespace IT15.Areas.Identity.Pages.Account
         }
     }
 }
+

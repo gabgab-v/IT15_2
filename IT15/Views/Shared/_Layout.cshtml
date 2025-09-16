@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -20,10 +21,25 @@
     <header class="bg-white shadow-md">
         <nav class="container mx-auto flex items-center justify-between px-4 py-3">
             <a class="text-xl font-bold text-blue-600" asp-area="" asp-controller="Home" asp-action="Index">OpenBook</a>
-            <div class="hidden md:flex space-x-6">
+            <div class="hidden md:flex items-center space-x-6">
                 <a class="text-gray-700 hover:text-blue-600 transition" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                 <a class="text-gray-700 hover:text-blue-600 transition" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+
+                <!-- THE CHANGE: New Dropdown Menu for Panels -->
+                <div class="relative" id="panels-dropdown">
+                    <button id="panels-button" class="flex items-center text-gray-700 hover:text-blue-600 transition">
+                        <span>Panels</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 ml-1"></i>
+                    </button>
+                    <!-- Dropdown Content -->
+                    <div id="panels-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden">
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Panel</a>
+                        <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">HR Panel</a>
+                        <a asp-area="Accounting" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Accounting Panel</a>
+                    </div>
+                </div>
             </div>
+
             <div>
                 <partial name="_LoginPartial" />
             </div>
@@ -38,11 +54,34 @@
     <!-- Footer -->
     <footer class="bg-white border-t text-center text-gray-500 text-sm py-4 mt-6">
         <div class="container mx-auto">
-            &copy; 2025 - IT15 -
+            &copy; @DateTime.Now.Year - IT15 -
             <a asp-area="" asp-controller="Home" asp-action="Privacy" class="text-blue-600 hover:text-blue-500">Privacy</a>
         </div>
     </footer>
 
+    <!-- THE CHANGE: JavaScript for the dropdown and Lucide icons -->
+    <script>
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdown = document.getElementById('panels-dropdown');
+            const button = document.getElementById('panels-button');
+            const menu = document.getElementById('panels-menu');
+
+            if (button && menu) {
+                button.addEventListener('click', () => {
+                    menu.classList.toggle('hidden');
+                });
+
+                // Optional: Close dropdown when clicking outside
+                document.addEventListener('click', (event) => {
+                    if (!dropdown.contains(event.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

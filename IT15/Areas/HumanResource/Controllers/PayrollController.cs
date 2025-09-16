@@ -1,7 +1,9 @@
 ﻿using IT15.Data;
 using IT15.Models;
 using IT15.Services;
+using IT15.ViewModels.HumanResource;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,42 +18,66 @@ namespace IT15.Areas.HumanResource.Controllers
     {
         private readonly PayrollService _payrollService;
         private readonly ApplicationDbContext _context;
+        private readonly IEmailSender _emailSender;
 
-        public PayrollController(PayrollService payrollService, ApplicationDbContext context)
+        public PayrollController(PayrollService payrollService, ApplicationDbContext context, IEmailSender emailSender)
         {
             _payrollService = payrollService;
             _context = context;
+            _emailSender = emailSender;
         }
 
-        // Updated Index action to fetch and display a list of all payrolls
         public async Task<IActionResult> Index()
         {
             var payrolls = await _context.Payrolls
-                .Include(p => p.PaySlips) // Include payslips to calculate totals
+                .Include(p => p.PaySlips)
+                .ThenInclude(ps => ps.Employee)
                 .OrderByDescending(p => p.PayrollMonth)
                 .ToListAsync();
             return View(payrolls);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Review(int id)
+        {
+            var payroll = await _context.Payrolls
+                .Include(p => p.PaySlips)
+                    .ThenInclude(ps => ps.Employee)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (payroll == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new PayrollReviewViewModel
+            {
+                Payroll = payroll,
+                PaySlips = payroll.PaySlips.ToList(),
+                TotalNetPay = payroll.PaySlips.Sum(ps => ps.NetPay)
+            };
+
+            return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Generate(DateTime payrollMonth)
         {
-            // Check if payroll for this month already exists
-            var existingPayroll = await _context.Payrolls.AnyAsync(p => p.PayrollMonth.Month == payrollMonth.Month && p.PayrollMonth.Year == payrollMonth.Year);
-            if (existingPayroll)
+            var wasGenerated = await _payrollService.GeneratePayrollForMonth(payrollMonth);
+
+            if (wasGenerated)
             {
-                TempData["ErrorMessage"] = $"Payroll for {payrollMonth:MMMM yyyy} has already been generated.";
+                TempData["SuccessMessage"] = $"Payroll for {payrollMonth:MMMM yyyy} has been generated and sent for approval.";
             }
             else
             {
-                await _payrollService.GeneratePayrollForMonth(payrollMonth);
-                TempData["SuccessMessage"] = $"Payroll for {payrollMonth:MMMM yyyy} has been generated and sent for approval.";
+                TempData["ErrorMessage"] = $"Could not generate payroll. An active payroll for {payrollMonth:MMMM yyyy} already exists.";
             }
+
             return RedirectToAction("Index");
         }
 
-        // NEW ACTION: Allows HR to finalize the payroll and make payslips visible
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Release(int id)
@@ -64,6 +90,63 @@ namespace IT15.Areas.HumanResource.Controllers
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = $"Payslips for {payroll.PayrollMonth:MMMM yyyy} have been released.";
             }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Archive(int id)
+        {
+            var payroll = await _context.Payrolls.FindAsync(id);
+            if (payroll != null && payroll.Status == PayrollStatus.PendingApproval)
+            {
+                payroll.IsArchived = true;
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Payroll for {payroll.PayrollMonth:MMMM yyyy} has been archived.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Could not archive this payroll. It may have already been actioned by accounting.";
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendPayslip(int id)
+        {
+            var payslip = await _context.PaySlips
+                .Include(p => p.Employee)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (payslip == null || payslip.Employee == null || string.IsNullOrEmpty(payslip.Employee.Email))
+            {
+                TempData["ErrorMessage"] = "Could not send email. Payslip or employee email not found.";
+                return RedirectToAction("Index");
+            }
+
+            var payroll = await _context.Payrolls.FindAsync(payslip.PayrollId);
+            string subject = $"Your Payslip for {payroll.PayrollMonth:MMMM yyyy}";
+            string message = $@"
+                Hi {payslip.Employee.UserName},<br/><br/>
+                Here is your Payslip summary:<br/>
+                <ul>
+                    <li><strong>Basic Salary:</strong> ₱{payslip.BasicSalary:N2}</li>
+                    <li><strong>Deductions:</strong> ₱{payslip.TotalDeductions:N2}</li>
+                    <li><strong>Net Pay:</strong> ₱{payslip.NetPay:N2}</li>
+                </ul>
+                <br/>Thank you,<br/>The HR Team";
+
+            try
+            {
+                await _emailSender.SendEmailAsync(payslip.Employee.Email, subject, message);
+                TempData["SuccessMessage"] = $"Payslip successfully emailed to {payslip.Employee.Email}.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error sending email: {ex.Message}";
+            }
+
             return RedirectToAction("Index");
         }
     }

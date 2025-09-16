@@ -1,9 +1,7 @@
-﻿using Humanizer;
-using IT15.Data;
+﻿using IT15.Data;
 using IT15.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,64 +19,77 @@ namespace IT15.Services
             _userManager = userManager;
         }
 
-        public async Task GeneratePayrollForMonth(DateTime month)
+        public async Task<bool> GeneratePayrollForMonth(DateTime month)
         {
+            var payrollMonth = new DateTime(month.Year, month.Month, 1);
+            bool activePayrollExists = await _context.Payrolls
+                .AnyAsync(p => p.PayrollMonth == payrollMonth && !p.IsArchived);
+
+            if (activePayrollExists)
+            {
+                return false;
+            }
+
             var payroll = new Payroll
             {
-                PayrollMonth = new DateTime(month.Year, month.Month, 1),
+                PayrollMonth = payrollMonth,
                 DateGenerated = DateTime.Now,
-                Status = PayrollStatus.PendingApproval // Set the initial status
+                Status = PayrollStatus.PendingApproval
             };
 
             var employees = await _userManager.GetUsersInRoleAsync("User");
 
             foreach (var employee in employees)
             {
-                // --- CALCULATION LOGIC ---
-                // This is a simplified example. A real system would be more complex.
-                decimal basicSalary = 20000; // Assume a fixed monthly salary for simplicity
+                decimal basicSalary = 20000;
                 int workingDaysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
 
-                var attendance = await _context.DailyLogs
-                    .Where(d => d.UserId == employee.Id && d.CheckInTime.Month == month.Month && d.CheckInTime.Year == month.Year)
-                    .CountAsync();
+                var attendanceCount = await _context.DailyLogs
+                    .CountAsync(d => d.UserId == employee.Id && d.CheckInTime.Month == month.Month && d.CheckInTime.Year == month.Year);
 
                 var approvedLeaves = await _context.LeaveRequests
-                    .Where(l => l.RequestingEmployeeId == employee.Id && l.Status == LeaveRequestStatus.Approved && l.StartDate.Month == month.Month)
-                    .CountAsync();
+                    .CountAsync(l => l.RequestingEmployeeId == employee.Id && l.Status == LeaveRequestStatus.Approved && l.StartDate.Month == month.Month);
 
-                int daysPresent = attendance + approvedLeaves;
-                int daysAbsent = workingDaysInMonth - daysPresent;
-                decimal dailyRate = basicSalary / workingDaysInMonth;
-                decimal absentDeductions = daysAbsent > 0 ? daysAbsent * dailyRate : 0;
+                int daysPresent = attendanceCount + approvedLeaves;
+                int daysAbsent = workingDaysInMonth > daysPresent ? workingDaysInMonth - daysPresent : 0;
+                decimal dailyRate = workingDaysInMonth > 0 ? basicSalary / workingDaysInMonth : 0;
+                decimal absentDeductions = daysAbsent * dailyRate;
 
-                // Simplified fixed deductions
+                // --- NEW OVERTIME CALCULATION LOGIC ---
+                // 1. Get all approved overtime requests for this employee for the month.
+                var approvedOvertimeRequests = await _context.OvertimeRequests
+                    .Where(r => r.RequestingEmployeeId == employee.Id &&
+                                r.Status == OvertimeStatus.Approved &&
+                                r.OvertimeDate.Month == month.Month &&
+                                r.OvertimeDate.Year == month.Year)
+                    .ToListAsync();
+
+                // 2. Sum the total approved hours from those requests.
+                decimal totalApprovedOvertimeHours = approvedOvertimeRequests.Sum(r => r.TotalHours);
+
+                // 3. Calculate pay based on approved hours.
+                decimal hourlyRate = dailyRate / 8; // Assuming an 8-hour day
+                decimal overtimePay = totalApprovedOvertimeHours * hourlyRate * 1.25m; // Assuming 125% overtime rate
+                // --- END OF NEW LOGIC ---
+
                 decimal sss = 500;
                 decimal philhealth = 300;
                 decimal pagibig = 100;
 
-                decimal grossPay = basicSalary - absentDeductions;
-                decimal totalDeductions = sss + philhealth + pagibig + absentDeductions;
-                decimal netPay = grossPay - totalDeductions;
+                decimal grossPay = (basicSalary - absentDeductions) + overtimePay;
+                grossPay = Math.Max(0, grossPay);
 
-                var paySlip = new PaySlip
-                {
-                    EmployeeId = employee.Id,
-                    BasicSalary = basicSalary,
-                    AbsentDeductions = absentDeductions,
-                    SSSDeduction = sss,
-                    PhilHealthDeduction = philhealth,
-                    PagIBIGDeduction = pagibig,
-                    TaxDeduction = 0, // Simplified
-                    GrossPay = grossPay,
-                    TotalDeductions = totalDeductions,
-                    NetPay = netPay
-                };
+                decimal totalDeductions = sss + philhealth + pagibig + absentDeductions;
+                decimal netPay = Math.Max(0, grossPay - totalDeductions);
+
+                var paySlip = new PaySlip { /* ... mapping ... */ };
                 payroll.PaySlips.Add(paySlip);
             }
 
             _context.Payrolls.Add(payroll);
             await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
+
