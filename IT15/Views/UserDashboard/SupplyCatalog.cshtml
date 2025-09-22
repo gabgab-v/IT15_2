@@ -1,0 +1,53 @@
+﻿@model IEnumerable<IT15.Models.StoreProduct>
+
+@{
+    ViewData["Title"] = "Supply Catalog";
+    Layout = "~/Views/UserDashboard/_Layout.cshtml";
+}
+
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">Supply Catalog & Request</h2>
+        <p class="text-gray-500 mt-1">Request new inventory to be added to the company's stock.</p>
+    </div>
+    <a asp-action="MyRequests" class="text-sm font-medium text-blue-600 hover:text-blue-800 mt-2 md:mt-0">
+        View My Requests &rarr;
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+        <p>@TempData["ErrorMessage"]</p>
+    </div>
+}
+
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    @foreach (var product in Model)
+    {
+        <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+            <div class="h-48 bg-gray-100 flex items-center justify-center p-4">
+                <img src="@product.Image" alt="@product.Title" class="max-h-full max-w-full object-contain" />
+            </div>
+            <div class="p-4 flex flex-col flex-grow">
+                <h4 class="font-semibold text-gray-800 text-sm flex-grow">@product.Title</h4>
+                <p class="text-xl font-bold text-gray-900 my-2">@product.Price.ToString("C")</p>
+                <form asp-controller="UserDashboard" asp-action="RequestSupply" method="post" class="mt-auto space-y-3">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productName" value="@product.Title" />
+                    <div class="flex items-center space-x-2">
+                        <input type="number" name="quantity" value="10" min="1" class="w-20 text-center border-gray-300 rounded-md shadow-sm" />
+                        <button type="submit" class="flex-1 bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>

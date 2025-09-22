@@ -30,10 +30,15 @@ namespace IT15.Models
         public decimal BasicSalary { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
         public decimal OvertimePay { get; set; }
-
         // Deductions
         [Column(TypeName = "decimal(18, 2)")]
         public decimal AbsentDeductions { get; set; }
+
+        // NEW: Property to store overtime penalties
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal OvertimePenalty { get; set; }
+
+
         [Column(TypeName = "decimal(18, 2)")]
         public decimal SSSDeduction { get; set; } // Social Security System
         [Column(TypeName = "decimal(18, 2)")]

@@ -4,6 +4,7 @@ using IT15.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IT15.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922143519_AddSupplyChainTables_2")]
+    partial class AddSupplyChainTables_2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -265,41 +268,6 @@ namespace IT15.Data.Migrations
                     b.HasIndex("ApprovedById");
 
                     b.ToTable("Payrolls");
-                });
-
-            modelBuilder.Entity("IT15.Models.ProductRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateRequested")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("PricePerUnit")
-                        .HasColumnType("decimal(18, 2)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("RequestingEmployeeId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequestingEmployeeId");
-
-                    b.ToTable("ProductRequests");
                 });
 
             modelBuilder.Entity("IT15.Models.Supplier", b =>
@@ -681,17 +649,6 @@ namespace IT15.Data.Migrations
                         .HasForeignKey("ApprovedById");
 
                     b.Navigation("ApprovedBy");
-                });
-
-            modelBuilder.Entity("IT15.Models.ProductRequest", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "RequestingEmployee")
-                        .WithMany()
-                        .HasForeignKey("RequestingEmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RequestingEmployee");
                 });
 
             modelBuilder.Entity("IT15.Models.Supply", b =>

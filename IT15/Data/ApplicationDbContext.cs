@@ -18,7 +18,10 @@ namespace IT15.Data
         public DbSet<Payroll> Payrolls { get; set; }
         public DbSet<PaySlip> PaySlips { get; set; }
         public DbSet<CompanyLedger> CompanyLedger { get; set; }
+        public DbSet<SupplyRequest> SupplyRequests { get; set; }
+        public DbSet<Supply> Supplies { get; set; }
 
+        public DbSet<ProductRequest> ProductRequests { get; set; }
         public DbSet<OvertimeRequest> OvertimeRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)

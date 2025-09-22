@@ -1,20 +1,18 @@
-﻿@model IEnumerable<IT15.Models.StoreProduct>
+﻿@model IT15.ViewModels.SalesViewModel
 
 @{
-    ViewData["Title"] = "Record Sales";
-    var currentBalance = (decimal)ViewData["CurrentBalance"];
-    // This tells the view to use the UserDashboard layout
+    ViewData["Title"] = "Sales & Inventory";
     Layout = "~/Views/UserDashboard/_Layout.cshtml";
 }
 
-<div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 mb-6">
     <div>
-        <h2 class="text-2xl font-bold text-gray-900">Record Company Sales</h2>
-        <p class="text-gray-500 mt-1">Simulate company income by recording product sales for specific months.</p>
+        <h2 class="text-2xl font-bold text-gray-900">Sales & Inventory</h2>
+        <p class="text-gray-500 mt-1">Record sales to generate income. Inventory is deducted automatically.</p>
     </div>
-    <div class="text-right">
+    <div class="text-left md:text-right mt-4 md:mt-0">
         <p class="text-sm font-medium text-gray-500">Total Company Funds</p>
-        <p class="text-2xl font-bold text-green-600">@currentBalance.ToString("C", new System.Globalization.CultureInfo("en-US"))</p>
+        <p class="text-2xl font-bold text-green-600">@Model.CurrentBalance.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
     </div>
 </div>
 
@@ -24,33 +22,87 @@
         <p>@TempData["SuccessMessage"]</p>
     </div>
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+        <p>@TempData["ErrorMessage"]</p>
+    </div>
+}
 
-<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">Products from Fake Store API</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach (var product in Model)
+<div>
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Products</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @foreach (var item in Model.Products)
         {
-            <div class="border rounded-lg p-4 flex flex-col">
-                <img src="@product.Image" alt="@product.Title" class="h-40 w-full object-contain mb-4" />
-                <h4 class="font-semibold text-gray-800 flex-grow">@product.Title</h4>
-                <p class="text-lg font-bold text-blue-600 my-2">@product.Price.ToString("C", new System.Globalization.CultureInfo("en-US"))</p>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col transition duration-300 hover:shadow-xl">
+                <div class="h-48 bg-gray-100 flex items-center justify-center p-4">
+                    <img src="@item.Product.Image" alt="@item.Product.Title" class="max-h-full max-w-full object-contain" />
+                </div>
 
-                <!-- THE FIX: The asp-controller is now correctly set to "UserDashboard" -->
-                <form asp-action="RecordSale" asp-controller="UserDashboard" method="post" class="space-y-4">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="productName" value="@product.Title" />
-                    <input type="hidden" name="price" value="@product.Price" />
-
-                    <div>
-                        <label for="transactionMonth-@product.Id" class="text-sm font-medium text-gray-700">Sale Month</label>
-                        <input type="month" id="transactionMonth-@product.Id" name="transactionMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required value="@DateTime.Now.ToString("yyyy-MM")" />
+                <div class="p-4 flex flex-col flex-grow">
+                    <h4 class="font-semibold text-gray-800 text-sm flex-grow">@item.Product.Title</h4>
+                    <div class="flex justify-between items-center my-2">
+                        <p class="text-xl font-bold text-gray-900">@item.Product.Price.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
+                        <span class="text-xs font-semibold px-2 py-1 rounded-full @(item.StockLevel > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                            Stock: @item.StockLevel
+                        </span>
                     </div>
 
-                    <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
-                        Record Sale
-                    </button>
-                </form>
+                    <!-- Record Sale Form -->
+                    <form asp-action="RecordSale" asp-controller="UserDashboard" method="post" class="mt-2 space-y-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productName" value="@item.Product.Title" />
+                        <input type="hidden" name="price" value="@item.Product.Price" />
+
+                        <div>
+                            <label for="transactionMonth-@item.Product.Id" class="sr-only">Sale Month</label>
+                            <input type="month" id="transactionMonth-@item.Product.Id" name="transactionMonth" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm" required value="@DateTime.Now.ToString("yyyy-MM")" />
+                        </div>
+
+                        <div class="flex items-center justify-center space-x-2">
+                            <button type="button" class="quantity-minus bg-gray-200 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center font-bold">-</button>
+                            <input type="number" name="quantity" value="1" min="1" max="@item.StockLevel" class="quantity-input w-16 text-center border-gray-300 rounded-md shadow-sm" @(item.StockLevel == 0 ? "disabled" : "") />
+                            <button type="button" class="quantity-plus bg-gray-200 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center font-bold">+</button>
+                        </div>
+
+                        <button type="submit" class="w-full font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center @(item.StockLevel > 0 ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-500 cursor-not-allowed")" @(item.StockLevel == 0 ? "disabled" : "")>
+                            <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> Record Sale
+                        </button>
+                    </form>
+                </div>
             </div>
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const quantityContainers = document.querySelectorAll('.grid');
+
+            quantityContainers.forEach(container => {
+                container.addEventListener('click', function (e) {
+                    const target = e.target;
+                    const isPlus = target.classList.contains('quantity-plus');
+                    const isMinus = target.classList.contains('quantity-minus');
+
+                    if (isPlus || isMinus) {
+                        const form = target.closest('form');
+                        if (form) {
+                            const input = form.querySelector('.quantity-input');
+                            let currentValue = parseInt(input.value, 10);
+                            const maxStock = parseInt(input.getAttribute('max'), 10) || 0;
+
+                            if (isPlus && currentValue < maxStock) {
+                                input.value = currentValue + 1;
+                            } else if (isMinus && currentValue > 1) {
+                                input.value = currentValue - 1;
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}
+

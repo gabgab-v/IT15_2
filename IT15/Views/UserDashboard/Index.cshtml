@@ -41,14 +41,24 @@
                     </form>
                 </div>
             }
-            else
+            <!-- THE FIX: New block to handle when a user is checked in but it's too early to check out -->
+            else if (Model.AttendanceStatus == TodayAttendanceStatus.CheckedInCannotCheckOut)
             {
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <div class="flex items-center justify-center text-green-700">
-                        <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i>
-                        <p class="font-semibold">Your attendance for today is complete. Well done!</p>
-                    </div>
+            <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                <div class="flex items-center justify-center text-yellow-800">
+                    <i data-lucide="clock" class="w-6 h-6 mr-2"></i>
+                    <p class="font-semibold">You are currently checked in. Check-out is available after your shift.</p>
                 </div>
+            </div>
+            }
+            else 
+            {
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="flex items-center justify-center text-green-700">
+                    <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i>
+                    <p class="font-semibold">Your attendance for today is complete. Well done!</p>
+                </div>
+            </div>
             }
         </div>
 
@@ -97,7 +107,7 @@
             }
         </div>
 
-        <!-- THE CHANGE: New Overtime Summary Card -->
+        <!-- Overtime Summary Card -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-700 mb-3">Overtime Summary</h3>
             <div class="space-y-4">

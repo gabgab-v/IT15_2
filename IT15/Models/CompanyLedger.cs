@@ -24,4 +24,4 @@ namespace IT15.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal Amount { get; set; }
     }
-}
+} 

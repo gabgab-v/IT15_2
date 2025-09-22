@@ -22,10 +22,7 @@ namespace IT15.Services
         public async Task<bool> GeneratePayrollForMonth(DateTime month)
         {
             var payrollMonth = new DateTime(month.Year, month.Month, 1);
-            bool activePayrollExists = await _context.Payrolls
-                .AnyAsync(p => p.PayrollMonth == payrollMonth && !p.IsArchived);
-
-            if (activePayrollExists)
+            if (await _context.Payrolls.AnyAsync(p => p.PayrollMonth == payrollMonth && !p.IsArchived))
             {
                 return false;
             }
@@ -43,46 +40,71 @@ namespace IT15.Services
             {
                 decimal basicSalary = 20000;
                 int workingDaysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
+                decimal dailyRate = workingDaysInMonth > 0 ? basicSalary / workingDaysInMonth : 0;
+                decimal hourlyRate = dailyRate / 8;
 
-                var attendanceCount = await _context.DailyLogs
-                    .CountAsync(d => d.UserId == employee.Id && d.CheckInTime.Month == month.Month && d.CheckInTime.Year == month.Year);
-
-                var approvedLeaves = await _context.LeaveRequests
-                    .CountAsync(l => l.RequestingEmployeeId == employee.Id && l.Status == LeaveRequestStatus.Approved && l.StartDate.Month == month.Month);
-
+                // --- Attendance and Leave Calculation (remains the same) ---
+                var attendanceCount = await _context.DailyLogs.CountAsync(d => d.UserId == employee.Id && d.CheckInTime.Month == month.Month);
+                var approvedLeaves = await _context.LeaveRequests.CountAsync(l => l.RequestingEmployeeId == employee.Id && l.Status == LeaveRequestStatus.Approved && l.StartDate.Month == month.Month);
                 int daysPresent = attendanceCount + approvedLeaves;
                 int daysAbsent = workingDaysInMonth > daysPresent ? workingDaysInMonth - daysPresent : 0;
-                decimal dailyRate = workingDaysInMonth > 0 ? basicSalary / workingDaysInMonth : 0;
                 decimal absentDeductions = daysAbsent * dailyRate;
 
-                // --- NEW OVERTIME CALCULATION LOGIC ---
-                // 1. Get all approved overtime requests for this employee for the month.
-                var approvedOvertimeRequests = await _context.OvertimeRequests
-                    .Where(r => r.RequestingEmployeeId == employee.Id &&
-                                r.Status == OvertimeStatus.Approved &&
-                                r.OvertimeDate.Month == month.Month &&
-                                r.OvertimeDate.Year == month.Year)
+                // --- NEW OVERTIME AND PENALTY LOGIC ---
+                decimal totalOvertimePay = 0;
+                decimal totalOvertimePenalty = 0;
+
+                var approvedRequests = await _context.OvertimeRequests
+                    .Where(r => r.RequestingEmployeeId == employee.Id && r.Status == OvertimeStatus.Approved && r.OvertimeDate.Month == month.Month)
                     .ToListAsync();
 
-                // 2. Sum the total approved hours from those requests.
-                decimal totalApprovedOvertimeHours = approvedOvertimeRequests.Sum(r => r.TotalHours);
+                foreach (var request in approvedRequests)
+                {
+                    var dailyLog = await _context.DailyLogs.FirstOrDefaultAsync(d => d.UserId == employee.Id && d.CheckInTime.Date == request.OvertimeDate.Date);
 
-                // 3. Calculate pay based on approved hours.
-                decimal hourlyRate = dailyRate / 8; // Assuming an 8-hour day
-                decimal overtimePay = totalApprovedOvertimeHours * hourlyRate * 1.25m; // Assuming 125% overtime rate
-                // --- END OF NEW LOGIC ---
+                    if (dailyLog != null && dailyLog.CheckOutTime.HasValue)
+                    {
+                        var approvedEndTime = request.OvertimeDate.Date + request.EndTime;
 
-                decimal sss = 500;
-                decimal philhealth = 300;
-                decimal pagibig = 100;
+                        // Calculate penalty if checked out early
+                        if (dailyLog.CheckOutTime.Value < approvedEndTime)
+                        {
+                            var unworkedHours = (decimal)(approvedEndTime - dailyLog.CheckOutTime.Value).TotalHours;
+                            totalOvertimePenalty += unworkedHours * hourlyRate;
+                        }
 
-                decimal grossPay = (basicSalary - absentDeductions) + overtimePay;
-                grossPay = Math.Max(0, grossPay);
+                        // Calculate pay for actual overtime worked
+                        var overtimeStart = request.OvertimeDate.Date.AddHours(18); // Assumes OT starts at 6 PM
+                        if (dailyLog.CheckOutTime.Value > overtimeStart)
+                        {
+                            var actualOvertimeHours = (decimal)(dailyLog.CheckOutTime.Value - overtimeStart).TotalHours;
+                            totalOvertimePay += actualOvertimeHours * hourlyRate * 1.25m; // 125% rate
+                        }
+                    }
+                }
 
-                decimal totalDeductions = sss + philhealth + pagibig + absentDeductions;
+                // --- Final Payroll Calculation ---
+                decimal sss = 500, philhealth = 300, pagibig = 100;
+                decimal grossPay = Math.Max(0, (basicSalary - absentDeductions) + totalOvertimePay);
+                decimal totalDeductions = sss + philhealth + pagibig + absentDeductions + totalOvertimePenalty;
                 decimal netPay = Math.Max(0, grossPay - totalDeductions);
 
-                var paySlip = new PaySlip { /* ... mapping ... */ };
+                var paySlip = new PaySlip
+                {
+                    EmployeeId = employee.Id,
+                    DaysAbsent = daysAbsent,
+                    BasicSalary = basicSalary,
+                    OvertimePay = totalOvertimePay,
+                    OvertimePenalty = totalOvertimePenalty,
+                    AbsentDeductions = absentDeductions,
+                    SSSDeduction = sss,
+                    PhilHealthDeduction = philhealth,
+                    PagIBIGDeduction = pagibig,
+                    TaxDeduction = 0,
+                    GrossPay = grossPay,
+                    TotalDeductions = totalDeductions,
+                    NetPay = netPay
+                };
                 payroll.PaySlips.Add(paySlip);
             }
 
@@ -92,4 +114,3 @@ namespace IT15.Services
         }
     }
 }
-

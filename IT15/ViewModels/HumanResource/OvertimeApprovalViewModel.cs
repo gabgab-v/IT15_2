@@ -7,6 +7,7 @@ namespace IT15.ViewModels.HumanResource
     {
         public List<DailyLog> AutoDetectedOvertime { get; set; } = new List<DailyLog>();
         public List<OvertimeRequest> ManualRequests { get; set; } = new List<OvertimeRequest>();
+
     }
 }
 

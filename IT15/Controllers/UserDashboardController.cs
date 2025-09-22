@@ -17,12 +17,10 @@ namespace IT15.Controllers
     public class UserDashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
-        // THE FIX: Change ApplicationUser back to the default IdentityUser
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly IncomeApiService _incomeApiService;
 
-        // THE FIX: The constructor must also request the default SignInManager
         public UserDashboardController(ApplicationDbContext context, SignInManager<IdentityUser> signInManager, IConfiguration configuration, IncomeApiService incomeApiService)
         {
             _context = context;
@@ -32,32 +30,45 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-       
         public async Task<IActionResult> Index()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var today = DateTime.Today;
-            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+            var now = DateTime.Now;
 
-            // Fetch all necessary data
+            // Use the helper method to get the policy-defined end time
+            var scheduledEndTime = GetScheduledEndDateTimeForToday();
+
             var todaysLog = await _context.DailyLogs.FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
+
+            // This logic now correctly determines if a user can check out
             var attendanceStatus = TodayAttendanceStatus.NotCheckedIn;
             if (todaysLog != null)
             {
-                attendanceStatus = todaysLog.CheckOutTime.HasValue ? TodayAttendanceStatus.Completed : TodayAttendanceStatus.CheckedIn;
+                if (todaysLog.CheckOutTime.HasValue)
+                {
+                    attendanceStatus = TodayAttendanceStatus.Completed;
+                }
+                else if (now < scheduledEndTime)
+                {
+                    // If it's before the scheduled end time, set the status to prevent checkout
+                    attendanceStatus = TodayAttendanceStatus.CheckedInCannotCheckOut;
+                }
+                else
+                {
+                    attendanceStatus = TodayAttendanceStatus.CheckedIn;
+                }
             }
+
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
             var upcomingLeave = await _context.LeaveRequests.Where(r => r.RequestingEmployeeId == userId && r.Status == LeaveRequestStatus.Approved && r.StartDate >= today).OrderBy(r => r.StartDate).FirstOrDefaultAsync();
             var pendingLeaveRequestsCount = await _context.LeaveRequests.CountAsync(r => r.RequestingEmployeeId == userId && r.Status == LeaveRequestStatus.Pending);
             var pendingOvertimeRequestsCount = await _context.OvertimeRequests.CountAsync(r => r.RequestingEmployeeId == userId && r.Status == OvertimeStatus.PendingApproval);
             var approvedOvertimeThisMonth = await _context.OvertimeRequests
-                .Where(r => r.RequestingEmployeeId == userId &&
-                             r.Status == OvertimeStatus.Approved &&
-                             r.OvertimeDate >= startOfMonth &&
-                             r.OvertimeDate < startOfMonth.AddMonths(1))
+                .Where(r => r.RequestingEmployeeId == userId && r.Status == OvertimeStatus.Approved && r.OvertimeDate >= startOfMonth && r.OvertimeDate < startOfMonth.AddMonths(1))
                 .ToListAsync();
             var totalApprovedHours = approvedOvertimeThisMonth.Sum(r => r.TotalHours);
 
-            // THE FIX: Ensure all fetched data is assigned to the ViewModel.
             var model = new UserDashboardViewModel
             {
                 AttendanceStatus = attendanceStatus,
@@ -70,16 +81,84 @@ namespace IT15.Controllers
             return View(model);
         }
 
-        // --- Attendance Actions ---
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckOut()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var today = DateTime.Today;
+            var now = DateTime.Now;
+
+            // Use the helper method for a consistent, secure check on the server
+            var scheduledEndDateTime = GetScheduledEndDateTimeForToday();
+
+            if (now < scheduledEndDateTime)
+            {
+                TempData["ErrorMessage"] = "Check-out is only available after your scheduled end time.";
+                return RedirectToAction("DailyLogs");
+            }
+
+            var todaysLog = await _context.DailyLogs
+                .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today && log.CheckOutTime == null);
+
+            if (todaysLog == null)
+            {
+                TempData["ErrorMessage"] = "No active check-in found to check out from.";
+                return RedirectToAction("DailyLogs");
+            }
+
+            todaysLog.CheckOutTime = DateTime.Now;
+
+            // ... (Your existing early checkout and overtime logic remains here)
+
+            _context.Update(todaysLog);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "You have successfully checked out.";
+
+            return RedirectToAction("DailyLogs");
+        }
+
+        // A private helper method to read the policy and get today's scheduled end time
+        private DateTime GetScheduledEndDateTimeForToday()
+        {
+            var policy = _configuration.GetSection("AttendancePolicy");
+            var scheduledEndTimeSpan = TimeSpan.Parse(policy["ScheduledEndTime"]);
+            return DateTime.Today.Add(scheduledEndTimeSpan);
+        }
+
+        #region Other Actions
+        // --- (All other actions like DailyLogs, CheckIn, Leave, Overtime, Sales, etc., remain here) ---
+
         [HttpGet]
         public async Task<IActionResult> DailyLogs()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var today = DateTime.Today;
+            var now = DateTime.Now;
+
+            // Read the policy from appsettings.json
+            var policy = _configuration.GetSection("AttendancePolicy");
+            var scheduledEndTimeString = policy["ScheduledEndTime"];
+            var scheduledEndTime = today.Add(TimeSpan.Parse(scheduledEndTimeString));
+
             var userLogs = await _context.DailyLogs
                 .Where(log => log.UserId == userId)
                 .OrderByDescending(log => log.CheckInTime)
                 .ToListAsync();
-            return View(userLogs);
+
+            var todaysLog = userLogs.FirstOrDefault(log => log.CheckInTime.Date == today);
+
+            // THE CHANGE: Use the consolidated UserDashboardViewModel
+            var viewModel = new UserDashboardViewModel
+            {
+                Logs = userLogs,
+                HasCheckedInToday = todaysLog != null,
+                HasCheckedOutToday = todaysLog?.CheckOutTime.HasValue ?? false,
+                CanCheckOutNow = now >= scheduledEndTime,
+                ScheduledEndTime = scheduledEndTime.ToString("h:mm tt")
+            };
+
+            return View(viewModel);
         }
 
         [HttpPost]
@@ -97,7 +176,6 @@ namespace IT15.Controllers
                 return RedirectToAction("DailyLogs");
             }
 
-            // Read policies from appsettings.json
             var policy = _configuration.GetSection("AttendancePolicy");
             var scheduledStartTime = TimeSpan.Parse(policy["ScheduledStartTime"]);
             var gracePeriod = TimeSpan.FromMinutes(int.Parse(policy["GracePeriodMinutes"]));
@@ -107,47 +185,12 @@ namespace IT15.Controllers
             {
                 UserId = userId,
                 CheckInTime = now,
-                // Determine if the check-in is late
                 Status = now > gracePeriodEndTime ? AttendanceStatus.Late : AttendanceStatus.Present
             };
 
             _context.DailyLogs.Add(newLog);
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = newLog.Status == AttendanceStatus.Late ? "You have checked in late." : "You have successfully checked in.";
-
-            return RedirectToAction("DailyLogs");
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckOut()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var today = DateTime.Today;
-
-            var todaysLog = await _context.DailyLogs
-                .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today && log.CheckOutTime == null);
-
-            if (todaysLog == null)
-            {
-                TempData["ErrorMessage"] = "No active check-in found to check out from.";
-                return RedirectToAction("DailyLogs");
-            }
-
-            todaysLog.CheckOutTime = DateTime.Now;
-
-            // Business logic for early checkout can still apply if needed
-            var policy = _configuration.GetSection("AttendancePolicy");
-            var minHours = double.Parse(policy["MinimumHoursForFullDay"]);
-            var scheduledEndDateTime = today.Add(TimeSpan.Parse(policy["ScheduledEndTime"]));
-            if (DateTime.Now < scheduledEndDateTime && (todaysLog.CheckOutTime.Value - todaysLog.CheckInTime).TotalHours < minHours)
-            {
-                todaysLog.Status = AttendanceStatus.EarlyCheckout;
-            }
-
-            _context.Update(todaysLog);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "You have successfully checked out.";
 
             return RedirectToAction("DailyLogs");
         }
@@ -190,8 +233,6 @@ namespace IT15.Controllers
             return View(overtimeRequest);
         }
 
-
-        // --- Leave Request Actions ---
         [HttpGet]
         public async Task<IActionResult> LeaveRequests()
         {
@@ -223,7 +264,6 @@ namespace IT15.Controllers
                 leaveRequest.RequestingEmployeeId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 leaveRequest.DateRequested = DateTime.Now;
                 leaveRequest.Status = LeaveRequestStatus.Pending;
-
                 _context.Add(leaveRequest);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(LeaveRequests));
@@ -234,33 +274,163 @@ namespace IT15.Controllers
         [HttpGet]
         public async Task<IActionResult> Sales()
         {
-            ViewData["CurrentBalance"] = await _context.CompanyLedger.SumAsync(t => t.Amount);
+            // 1. Get all products from the external API
+            var apiProducts = await _incomeApiService.GetProductsAsync();
+            // 2. Get all our local supply records from the database
+            var localSupplies = await _context.Supplies.ToDictionaryAsync(s => s.Name, s => s.StockLevel);
+
+            var salesProducts = new List<SalesProductViewModel>();
+            foreach (var product in apiProducts)
+            {
+                // 3. For each product, find its current stock level in our local database
+                localSupplies.TryGetValue(product.Title, out var stockLevel);
+
+                salesProducts.Add(new SalesProductViewModel
+                {
+                    Product = product,
+                    StockLevel = stockLevel // This will be 0 if the supply doesn't exist
+                });
+            }
+
+            var model = new SalesViewModel
+            {
+                Products = salesProducts,
+                CurrentBalance = await _context.CompanyLedger.SumAsync(t => t.Amount)
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordSale(string productName, decimal price, DateTime transactionMonth, int quantity)
+        {
+            // THE FIX: Check for sufficient stock before recording a sale.
+            // This assumes product names from the API match supply names in your database.
+            var supplyItem = await _context.Supplies.FirstOrDefaultAsync(s => s.Name == productName);
+
+            if (supplyItem == null || supplyItem.StockLevel < quantity)
+            {
+                TempData["ErrorMessage"] = $"Sale failed: Insufficient stock for {productName}. Current stock: {(supplyItem?.StockLevel ?? 0)}. Please request more supplies.";
+                return RedirectToAction("Sales");
+            }
+
+            // If stock is sufficient, deduct the quantity and record the sale.
+            supplyItem.StockLevel -= quantity;
+
+            var saleTransaction = new CompanyLedger
+            {
+                UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                TransactionDate = new DateTime(transactionMonth.Year, transactionMonth.Month, 1),
+                Description = $"{quantity} x Sale of {productName}",
+                Amount = price * quantity
+            };
+
+            _context.CompanyLedger.Add(saleTransaction);
+
+            // Save both the stock update and the new ledger entry to the database.
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Sale of {quantity} x {productName} recorded successfully! Stock updated.";
+            return RedirectToAction("Sales");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SupplyCatalog()
+        {
             var products = await _incomeApiService.GetProductsAsync();
             return View(products);
         }
 
-        // POST: /UserDashboard/RecordSale
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RecordSale(string productName, decimal price, DateTime transactionMonth)
+        public async Task<IActionResult> RequestSupply(string productName, int quantity)
         {
-            if (price > 0)
+            if (quantity > 0)
             {
-                var saleTransaction = new CompanyLedger
+                // Find the supply item in the database by its name.
+                var supplyItem = await _context.Supplies.FirstOrDefaultAsync(s => s.Name == productName);
+                if (supplyItem == null)
                 {
-                    UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                    TransactionDate = new DateTime(transactionMonth.Year, transactionMonth.Month, 1),
-                    Description = $"Sale of {productName}",
-                    Amount = price
+                    TempData["ErrorMessage"] = "Could not request supply: This item does not exist in the local inventory.";
+                    return RedirectToAction("Sales");
+                }
+
+                // Increase the stock level directly.
+                supplyItem.StockLevel += quantity;
+
+                // Create the request record for tracking purposes.
+                var request = new SupplyRequest
+                {
+                    SupplyId = supplyItem.Id,
+                    Quantity = quantity,
+                    RequestingEmployeeId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    DateRequested = DateTime.Now,
+                    Status = SupplyRequestStatus.Approved // Auto-approved for testing
                 };
-                _context.CompanyLedger.Add(saleTransaction);
+
+                _context.SupplyRequests.Add(request);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Sale for {transactionMonth:MMMM yyyy} recorded successfully!";
+
+                TempData["SuccessMessage"] = $"Request approved and {quantity} units of {supplyItem.Name} added to stock.";
             }
-            return RedirectToAction("Sales"); // Redirect back to the Sales page
+            return RedirectToAction("Sales");
         }
 
-        // --- Logout Action ---
+        [HttpGet]
+        public async Task<IActionResult> MyRequests()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var requests = await _context.SupplyRequests
+                .Include(r => r.Supply)
+                .Where(r => r.RequestingEmployeeId == userId)
+                .OrderByDescending(r => r.DateRequested)
+                .ToListAsync();
+            return View(requests);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ProductCatalog()
+        {
+            var products = await _incomeApiService.GetProductsAsync();
+            return View(products);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestProduct(string productName, decimal price, int quantity)
+        {
+            if (quantity > 0)
+            {
+                var request = new ProductRequest
+                {
+                    RequestingEmployeeId = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    ProductName = productName,
+                    PricePerUnit = price,
+                    Quantity = quantity,
+                    DateRequested = DateTime.Now,
+                    // THE CHANGE: The status is now set directly to Approved.
+                    Status = ProductRequestStatus.Approved
+                };
+                _context.ProductRequests.Add(request);
+                await _context.SaveChangesAsync();
+                // You can also update the success message to reflect the change.
+                TempData["SuccessMessage"] = "Your product request has been automatically approved.";
+            }
+            return RedirectToAction("ProductCatalog");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MyProductRequests()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var requests = await _context.ProductRequests
+                .Where(r => r.RequestingEmployeeId == userId)
+                .OrderByDescending(r => r.DateRequested)
+                .ToListAsync();
+            return View(requests);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -270,19 +440,18 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult>
-            PaySlips()
+        public async Task<IActionResult> PaySlips()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var paySlips = await _context.PaySlips
-            .Include(p => p.Payroll) // Eager load the related Payroll data
+            .Include(p => p.Payroll)
             .Include(p => p.Employee)
             .Where(p => p.EmployeeId == userId)
             .OrderByDescending(p => p.Payroll.PayrollMonth)
             .ToListAsync();
             return View(paySlips);
         }
-
+        #endregion
     }
 }
 

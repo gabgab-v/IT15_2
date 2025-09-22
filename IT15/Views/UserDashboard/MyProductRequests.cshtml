@@ -1,0 +1,77 @@
+﻿@model IEnumerable<IT15.Models.ProductRequest>
+
+@{
+    ViewData["Title"] = "My Product Requests";
+    Layout = "~/Views/UserDashboard/_Layout.cshtml";
+
+    string GetStatusBadgeClass(ProductRequestStatus status)
+    {
+        return status switch
+        {
+            ProductRequestStatus.Approved => "bg-green-100 text-green-800",
+            ProductRequestStatus.Pending => "bg-yellow-100 text-yellow-800",
+            ProductRequestStatus.Denied => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+}
+
+<div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">My Product Request History</h2>
+        <p class="text-gray-500 mt-1">Track the status of your past requests for products.</p>
+    </div>
+    <a asp-action="ProductCatalog" class="text-sm font-medium text-blue-600 hover:text-blue-800">
+        &larr; Back to Catalog
+    </a>
+</div>
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Requested</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @if (Model.Any())
+                {
+                    @foreach (var request in Model)
+                    {
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @request.DateRequested.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                @request.ProductName
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @request.Quantity
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                                @request.TotalCost.ToString("C")
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(request.Status)">
+                                    @request.Status.ToString()
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">You have not made any product requests yet.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
