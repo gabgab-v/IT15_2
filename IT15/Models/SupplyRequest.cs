@@ -19,5 +19,12 @@ namespace IT15.Models
         public IdentityUser RequestingEmployee { get; set; }
         public DateTime DateRequested { get; set; }
         public SupplyRequestStatus Status { get; set; } = SupplyRequestStatus.Pending;
+
+        public int DeliveryServiceId { get; set; }
+        [ForeignKey("DeliveryServiceId")]
+        public DeliveryService DeliveryService { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal TotalCost { get; set; }
     }
 }

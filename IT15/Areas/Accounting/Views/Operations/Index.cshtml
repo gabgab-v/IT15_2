@@ -1,0 +1,71 @@
+﻿    @model IEnumerable<IT15.Models.CompanyLedger>
+
+@{
+    ViewData["Title"] = "Operational Costs";
+}
+
+<div class="border-b border-gray-200 pb-4 mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Manage Operational Costs</h2>
+    <p class="text-gray-500 mt-1">Record and track company expenses like rent, utilities, and supplies.</p>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Add Cost Form -->
+    <div class="lg:col-span-1">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Add New Expense</h3>
+            <form asp-action="AddCost" method="post" class="space-y-4">
+                @Html.AntiForgeryToken()
+                <div>
+                    <label for="costType" class="block text-sm font-medium text-gray-700">Cost Type</label>
+                    <select name="costType" asp-items="Html.GetEnumSelectList<IT15.Models.OperationalCostType>()" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></select>
+                </div>
+                <div>
+                    <label for="amount" class="block text-sm font-medium text-gray-700">Amount (₱)</label>
+                    <input type="number" name="amount" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+                </div>
+                <div>
+                    <label for="transactionMonth" class="block text-sm font-medium text-gray-700">Expense Month</label>
+                    <input type="month" name="transactionMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required value="@DateTime.Now.ToString("yyyy-MM")" />
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                    Record Expense
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cost History -->
+    <div class="lg:col-span-2">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Expense History</h3>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var cost in Model)
+                    {
+                        <tr>
+                            <td class="px-6 py-4 text-sm">@cost.TransactionDate.ToString("MMM yyyy")</td>
+                            <td class="px-6 py-4 text-sm">@cost.Description</td>
+                            <td class="px-6 py-4 text-sm text-right font-medium text-red-600">@cost.Amount.ToString("C", new System.Globalization.CultureInfo("en-PH"))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

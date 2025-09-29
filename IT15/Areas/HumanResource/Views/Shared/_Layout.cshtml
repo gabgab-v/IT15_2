@@ -32,10 +32,11 @@
                     <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
                     Leave Requests
                 </a>
-                <a asp-area="HumanResource" asp-controller="Payroll" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
-                    <i data-lucide="landmark" class="w-5 h-5 mr-3"></i>
-                    Payroll
+                <a asp-area="HumanResource" asp-controller="Employee" asp-action="LeaveBalances" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i data-lucide="award" class="w-5 h-5 mr-3"></i>
+                    Leave Balances
                 </a>
+               
                 <a asp-area="HumanResource" asp-controller="Attendance" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"> 
                     <i data-lucide="clock" class="w-5 h-5 mr-3"></i> 
                     Overtime Approval 
@@ -43,6 +44,10 @@
                 <a asp-area="HumanResource" asp-controller="Employee" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                     Employee Overview
+                </a>
+                <a asp-area="HumanResource" asp-controller="Resignation" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"> 
+                    <i data-lucide="user-minus" class="w-5 h-5 mr-3"></i> 
+                    Resignation Mngmt 
                 </a>
             </nav>
 

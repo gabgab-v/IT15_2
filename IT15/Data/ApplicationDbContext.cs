@@ -21,8 +21,15 @@ namespace IT15.Data
         public DbSet<SupplyRequest> SupplyRequests { get; set; }
         public DbSet<Supply> Supplies { get; set; }
 
+        public DbSet<Supplier> Supplier { get; set; }
+
         public DbSet<ProductRequest> ProductRequests { get; set; }
         public DbSet<OvertimeRequest> OvertimeRequests { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
+        public DbSet<DeliveryService> DeliveryServices { get; set; }
+
+        public DbSet<ResignationRequest> ResignationRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

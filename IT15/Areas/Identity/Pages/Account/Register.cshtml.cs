@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using IT15.Services;
 
 namespace IT15.Areas.Identity.Pages.Account
 {
@@ -27,13 +28,15 @@ namespace IT15.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<IdentityUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IAuditService _auditService;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
             IUserStore<IdentityUser> userStore,
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IAuditService auditService)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -41,6 +44,7 @@ namespace IT15.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _auditService = auditService;
         }
 
         [BindProperty]
@@ -70,7 +74,7 @@ namespace IT15.Areas.Identity.Pages.Account
             public string PhoneNumber { get; set; }
 
             [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 12)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
@@ -109,6 +113,7 @@ namespace IT15.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
                     await _userManager.AddToRoleAsync(user, "User");
+                    await _auditService.LogAsync(user.Id, user.UserName, "User Registration Success", $"New user '{user.UserName}' registered successfully.");
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -135,6 +140,7 @@ namespace IT15.Areas.Identity.Pages.Account
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
+                    await _auditService.LogAsync("N/A", Input.Username, "User Registration Failure", $"Failed registration attempt for '{Input.Username}'. Reason: {error.Description}");
                 }
             }
             return Page();

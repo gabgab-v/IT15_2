@@ -1,9 +1,8 @@
-﻿@model IEnumerable<IT15.Models.LeaveRequest>
+﻿@model IEnumerable<IT15.ViewModels.HumanResource.LeaveRequestViewModel>
 
 @{
     ViewData["Title"] = "Manage Leave Requests";
 
-    // Helper to get the correct CSS class based on the request status
     string GetStatusBadgeClass(LeaveRequestStatus status)
     {
         return status switch
@@ -20,6 +19,20 @@
     <h2 class="text-2xl font-bold text-gray-900">Employee Leave Requests</h2>
     <p class="text-gray-500 mt-1">Review and action all pending and historical leave requests.</p>
 </div>
+
+<!-- THE CHANGE: Added status message display -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+        <p>@TempData["ErrorMessage"]</p>
+    </div>
+}
 
 <!-- Search and Filter Form -->
 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -50,6 +63,8 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                    <!-- THE CHANGE: New column for available leave balance -->
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -57,32 +72,36 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                @foreach (var request in Model)
+                @foreach (var item in Model)
                 {
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            @request.RequestingEmployee.Email
+                            @item.LeaveRequest.RequestingEmployee.Email
+                        </td>
+                        <!-- THE CHANGE: Display the employee's available leave days -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">
+                            @item.AvailableLeaveDays
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            @request.StartDate.ToString("MMM dd") - @request.EndDate.ToString("MMM dd, yyyy")
+                            @item.LeaveRequest.StartDate.ToString("MMM dd") - @item.LeaveRequest.EndDate.ToString("MMM dd, yyyy")
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            @request.Reason
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            @item.LeaveRequest.Reason
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(request.Status)">
-                                @request.Status.ToString()
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(item.LeaveRequest.Status)">
+                                @item.LeaveRequest.Status.ToString()
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            @if (request.Status == LeaveRequestStatus.Pending)
+                            @if (item.LeaveRequest.Status == LeaveRequestStatus.Pending)
                             {
                                 <div class="flex items-center space-x-2">
-                                    <form asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Approve" asp-route-id="@request.Id" method="post">
+                                    <form asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Approve" asp-route-id="@item.LeaveRequest.Id" method="post">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="text-green-600 hover:text-green-900">Approve</button>
                                     </form>
-                                    <form asp-area="Admin" asp-controller="LeaveRequest" asp-action="Deny" asp-route-id="@request.Id" method="post">
+                                    <form asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Deny" asp-route-id="@item.LeaveRequest.Id" method="post">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="text-red-600 hover:text-red-900">Deny</button>
                                     </form>

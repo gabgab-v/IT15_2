@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using IT15.Services;
 
 namespace IT15.Areas.Identity.Pages.Account
 {
@@ -21,13 +22,15 @@ namespace IT15.Areas.Identity.Pages.Account
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly IAuditService _auditService;
 
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<LoginModel> logger, IAuditService auditService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _logger = logger;
+            _auditService = auditService;
         }
 
         [BindProperty]
@@ -77,24 +80,37 @@ namespace IT15.Areas.Identity.Pages.Account
                 }
 
                 var result = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+                var userAttemptingLogin = await _userManager.FindByNameAsync(userName);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login Success", $"User '{userName}' logged in successfully.");
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
                 {
+                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login 2FA Required", $"User '{userName}' login requires 2FA.");
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
                 }
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
+                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Account Locked", $"User account '{userName}' is locked out.");
                     return RedirectToPage("./Lockout");
                 }
                 else
                 {
+                    if (userAttemptingLogin != null)
+                    {
+                        await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login Failure", $"Invalid password attempt for user '{userName}'.");
+                    }
+                    else
+                    {
+                        await _auditService.LogAsync("N/A", userName, "User Login Failure", $"Failed login attempt for non-existent user '{userName}'.");
+                    }
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+
                     return Page();
                 }
             }

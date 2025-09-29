@@ -1,4 +1,4 @@
-﻿@model IEnumerable<IT15.Models.StoreProduct>
+﻿@model IT15.ViewModels.SupplyCatalogViewModel
 
 @{
     ViewData["Title"] = "Supply Catalog";
@@ -11,7 +11,7 @@
         <p class="text-gray-500 mt-1">Request new inventory to be added to the company's stock.</p>
     </div>
     <a asp-action="MyRequests" class="text-sm font-medium text-blue-600 hover:text-blue-800 mt-2 md:mt-0">
-        View My Requests &rarr;
+        View Requests &rarr;
     </a>
 </div>
 
@@ -30,7 +30,7 @@
 
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-    @foreach (var product in Model)
+    @foreach (var product in Model.Products)
     {
         <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
             <div class="h-48 bg-gray-100 flex items-center justify-center p-4">
@@ -38,16 +38,26 @@
             </div>
             <div class="p-4 flex flex-col flex-grow">
                 <h4 class="font-semibold text-gray-800 text-sm flex-grow">@product.Title</h4>
-                <p class="text-xl font-bold text-gray-900 my-2">@product.Price.ToString("C")</p>
+                <p class="text-xl font-bold text-gray-900 my-2">@product.Price.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
                 <form asp-controller="UserDashboard" asp-action="RequestSupply" method="post" class="mt-auto space-y-3">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="productName" value="@product.Title" />
-                    <div class="flex items-center space-x-2">
-                        <input type="number" name="quantity" value="10" min="1" class="w-20 text-center border-gray-300 rounded-md shadow-sm" />
-                        <button type="submit" class="flex-1 bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">Request</button>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" name="quantity" value="10" min="1" class="mt-1 w-full text-center border-gray-300 rounded-md shadow-sm" />
                     </div>
+
+                    <!-- THE CHANGE: The dropdown for delivery services is now added -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Delivery Service</label>
+                        <select name="deliveryServiceId" asp-items="Model.DeliveryServices" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">Request</button>
                 </form>
             </div>
         </div>
     }
 </div>
+

@@ -1,15 +1,17 @@
 ﻿using IT15.Data;
 using IT15.Models;
-using IT15.ViewModels.Accounting; // Add this using
+using IT15.ViewModels.Accounting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic; // Add this using
+using System.Collections.Generic;
+using System.Security.Claims;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using IT15.Services; // Add this to use the Audit Service
 
 namespace IT15.Areas.Accounting.Controllers
 {
@@ -20,12 +22,18 @@ namespace IT15.Areas.Accounting.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<AccountingController> _logger;
+        private readonly IAuditService _auditService; // Inject the audit service
 
-        public AccountingController(ApplicationDbContext context, UserManager<IdentityUser> userManager, ILogger<AccountingController> logger)
+        public AccountingController(
+            ApplicationDbContext context,
+            UserManager<IdentityUser> userManager,
+            ILogger<AccountingController> logger,
+            IAuditService auditService) // Request the service
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
+            _auditService = auditService; // Initialize the service
         }
 
         public async Task<IActionResult> Index()
@@ -40,7 +48,6 @@ namespace IT15.Areas.Accounting.Controllers
 
             foreach (var payroll in pendingPayrolls)
             {
-                // Calculate the available funds UP TO the end of the payroll month.
                 var endOfMonth = payroll.PayrollMonth.AddMonths(1).AddDays(-1);
                 var fundsForPeriod = await _context.CompanyLedger
                     .Where(t => t.TransactionDate <= endOfMonth)
@@ -53,7 +60,6 @@ namespace IT15.Areas.Accounting.Controllers
                 });
             }
 
-            // Pass the current total balance to the view for the top card.
             ViewData["CurrentTotalFunds"] = await _context.CompanyLedger.SumAsync(t => t.Amount);
 
             return View(approvalViewModels);
@@ -70,34 +76,40 @@ namespace IT15.Areas.Accounting.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Perform the same historical check for security.
             var endOfMonth = payroll.PayrollMonth.AddMonths(1).AddDays(-1);
             var availableFunds = await _context.CompanyLedger.Where(t => t.TransactionDate <= endOfMonth).SumAsync(t => t.Amount);
             var totalPayrollCost = payroll.PaySlips.Sum(p => p.NetPay);
 
+            var currentUser = await _userManager.GetUserAsync(User);
+
             if (availableFunds < totalPayrollCost)
             {
+                // --- AUDIT LOG for failed attempt ---
+                await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Payroll Approval Failed", $"User '{currentUser.UserName}' failed to approve payroll for {payroll.PayrollMonth:MMMM yyyy} due to insufficient funds.");
                 TempData["ErrorMessage"] = "Cannot approve budget: Insufficient funds for that period.";
                 return RedirectToAction("Index");
             }
 
             payroll.Status = PayrollStatus.BudgetApproved;
             payroll.DateApproved = DateTime.Now;
-            payroll.ApprovedById = _userManager.GetUserId(User);
+            payroll.ApprovedById = currentUser.Id;
 
-            // Add an expense transaction to the ledger
             _context.CompanyLedger.Add(new CompanyLedger
             {
+                UserId = currentUser.Id,
                 TransactionDate = DateTime.Now,
-                Description = $"Payroll for {payroll.PayrollMonth:MMMM yyyy}",
-                Amount = -totalPayrollCost // The amount is negative for an expense
+                Description = $"Payroll expense for {payroll.PayrollMonth:MMMM yyyy}",
+                Amount = -totalPayrollCost
             });
 
             await _context.SaveChangesAsync();
+
+            // --- AUDIT LOG for successful approval ---
+            await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Payroll Budget Approved", $"User '{currentUser.UserName}' approved the budget for the {payroll.PayrollMonth:MMMM yyyy} payroll.");
+
             TempData["SuccessMessage"] = $"Budget for {payroll.PayrollMonth:MMMM yyyy} payroll has been approved.";
             return RedirectToAction("Index");
         }
     }
 }
-
 

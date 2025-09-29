@@ -36,6 +36,8 @@ builder.Services.AddHttpClient<IncomeApiService>(client =>
     client.BaseAddress = new Uri("https://fakestoreapi.com/");
 });
 
+builder.Services.AddScoped<IAuditService, AuditService>();
+
 // Configure Resend using the recommended IHttpClientFactory approach.
 
 

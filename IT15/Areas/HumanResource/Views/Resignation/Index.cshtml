@@ -1,0 +1,79 @@
+﻿@model IEnumerable<IT15.Models.ResignationRequest>
+
+@{
+    ViewData["Title"] = "Resignation Management";
+
+    string GetStatusBadgeClass(ResignationStatus status)
+    {
+        return status switch
+        {
+            ResignationStatus.Approved => "bg-green-100 text-green-800",
+            ResignationStatus.Pending => "bg-yellow-100 text-yellow-800",
+            ResignationStatus.Denied => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+}
+
+<h2 class="text-2xl font-bold text-gray-900 mb-4">Resignation Management</h2>
+<p class="text-gray-600 mb-6">Review and action all submitted employee resignation requests.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Effective Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var request in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            @request.RequestingEmployee.UserName
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @request.EffectiveDate.ToString("MMM dd, yyyy")
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-sm truncate" title="@request.Reason">
+                            @request.Reason
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(request.Status)">
+                                @request.Status.ToString()
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            @if (request.Status == ResignationStatus.Pending)
+                            {
+                                <div class="flex items-center space-x-2">
+                                    <form asp-action="Approve" asp-route-id="@request.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="text-green-600 hover:text-green-900">Approve</button>
+                                    </form>
+                                    <form asp-action="Deny" asp-route-id="@request.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="text-red-600 hover:text-red-900">Deny</button>
+                                    </form>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

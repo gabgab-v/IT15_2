@@ -1,0 +1,38 @@
+﻿    @model IEnumerable<IT15.Models.AuditLog>
+
+@{
+    ViewData["Title"] = "System Audit Log";
+}
+
+<h2 class="text-2xl font-bold text-gray-900 mb-4">System Audit Log</h2>
+<p class="text-gray-600 mb-6">A record of all important activities that have occurred in the system.</p>
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            @foreach (var log in Model)
+            {
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@log.UserName</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@log.ActionType</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">@log.Details</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<a asp-area="Admin" asp-controller="AuditLog" asp-action="Index" class="flex items-center ...">
+    <i data-lucide="history" class="w-5 h-5 mr-3"></i>
+    Audit Log
+</a>
+

@@ -1,0 +1,55 @@
+﻿@model IEnumerable<IT15.ViewModels.HumanResource.EmployeeLeaveBalanceViewModel>
+
+@{
+    ViewData["Title"] = "Manage Leave Balances";
+}
+
+<h2 class="text-2xl font-bold text-gray-900 mb-4">Manage Employee Leave Balances</h2>
+<p class="text-gray-600 mb-6">Add or adjust the number of available leave days for each employee.</p>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+        <p>@TempData["ErrorMessage"]</p>
+    </div>
+}
+
+
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Current Balance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Add Leave Days</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">@item.Employee.Email</td>
+                        <td class="px-6 py-4 text-sm font-bold text-gray-800">@item.CurrentLeaveBalance</td>
+                        <td class="px-6 py-4 text-sm">
+                            <form asp-action="AddLeaveDays" method="post" class="flex items-center space-x-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@item.Employee.Id" />
+                                <input type="number" name="daysToAdd" min="1" value="1" class="w-20 text-center border-gray-300 rounded-md shadow-sm" />
+                                <button type="submit" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">
+                                    Add
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

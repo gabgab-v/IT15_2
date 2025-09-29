@@ -12,21 +12,29 @@
     {
         @foreach (var slip in Model)
         {
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div id="payslip-container-@slip.Id" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <!-- Payslip Header -->
                 <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                     <div>
                         <h3 class="text-xl font-bold text-gray-900">Pay Slip for @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
                         <p class="text-sm text-gray-500">Employee: @slip.Employee?.Email</p>
                     </div>
-                    <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center transition-colors duration-200">
-                        <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
-                        Print
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
+                            <i data-lucide="printer" class="w-4 h-4 mr-2"></i>
+                            Print
+                        </button>
+                        
+                        <button data-payslipid="payslip-@slip.Id" data-filename="@($"Payslip-{slip.Payroll.PayrollMonth:yyyy-MM}-{slip.Employee.UserName}.pdf")" class="export-pdf-button bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 flex items-center">
+                            <i data-lucide="file-down" class="w-4 h-4 mr-2"></i>
+                            PDF
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Printable Payslip Details -->
-                <div id="payslip-@slip.Id">
+                <div id="payslip-@slip.Id" class="printable-content">
+                    <!-- THE FIX: Added the detailed payslip content here -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
                         <!-- Earnings Column -->
                         <div class="space-y-3">
@@ -40,7 +48,6 @@
                         <div class="space-y-3">
                             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Deductions</h4>
                             <div class="flex justify-between text-sm"><span>Absenteeism:</span> <span>- @slip.AbsentDeductions.ToString("C", culture)</span></div>
-                            <!-- THE CHANGE: Added a line to display the new Overtime Penalty -->
                             <div class="flex justify-between text-sm text-red-600"><span>Overtime Penalty:</span> <span>- @slip.OvertimePenalty.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>SSS:</span> <span>- @slip.SSSDeduction.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>PhilHealth:</span> <span>- @slip.PhilHealthDeduction.ToString("C", culture)</span></div>
@@ -71,68 +78,60 @@
 </div>
 
 @section Scripts {
-    <script>
-        function printPayslip(payslipId) {
-            const payslipContent = document.getElementById(payslipId);
-            if (!payslipContent) {
-                alert('Error: Payslip content not found.');
-                return;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        @@media print {
+            body * {
+                visibility: hidden;
             }
 
-            const printWindow = window.open('', '', 'height=800,width=1000');
-            if (!printWindow) {
-                alert('Please disable your pop-up blocker.');
-                return;
+            .print-area, .print-area * {
+                visibility: visible;
             }
 
-            // Clone the node to avoid moving it, then find scripts within the clone
-            const contentClone = payslipContent.cloneNode(true);
-            const scriptsInClone = contentClone.querySelectorAll('script');
-            scriptsInClone.forEach(script => script.remove());
-
-            const htmlContent = `
-                        <!DOCTYPE html>
-                        <html lang="en">
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>Print Payslip</title>
-                            <script src="https://cdn.tailwindcss.com"><\/script>
-                            <style>
-                                body {
-                                    font-family: Inter, sans-serif;
-                                    padding: 2rem;
-                                }
-                                h1 {
-                                    font-size: 1.5rem;
-                                    font-weight: 600;
-                                    margin-bottom: 2rem;
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            <h1>Pay Slip Details</h1>
-                            ${contentClone.innerHTML}
-                        </body>
-                        </html>
-                    `;
-
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-
-            printWindow.onload = function () {
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
-            };
+            .print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
         }
+    </style>
 
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const printButtons = document.querySelectorAll('.print-button');
-            printButtons.forEach(button => {
+            document.querySelectorAll('.print-button').forEach(button => {
                 button.addEventListener('click', function () {
                     const payslipId = this.dataset.payslipid;
-                    printPayslip(payslipId);
+                    const printSection = document.getElementById(payslipId);
+                    if (printSection) {
+                        printSection.classList.add('print-area');
+                        window.print();
+                        printSection.classList.remove('print-area');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.export-pdf-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    const payslipId = this.dataset.payslipid;
+                    const filename = this.dataset.filename;
+                    const contentToExport = document.getElementById(payslipId);
+
+                    if (contentToExport) {
+                        html2canvas(contentToExport).then(canvas => {
+                            const imgData = canvas.toDataURL('image/png');
+                            const { jsPDF } = window.jspdf;
+                            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                            const imgProps = pdf.getImageProperties(imgData);
+                            const pdfWidth = pdf.internal.pageSize.getWidth();
+                            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                            pdf.save(filename);
+                        });
+                    }
                 });
             });
         });

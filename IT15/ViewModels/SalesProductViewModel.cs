@@ -15,5 +15,8 @@ namespace IT15.ViewModels
     {
         public List<SalesProductViewModel> Products { get; set; } = new List<SalesProductViewModel>();
         public decimal CurrentBalance { get; set; }
+
+        public decimal RevenueMarginPercent { get; set; }
+        public List<CompanyLedger> RecentSales { get; set; } = new List<CompanyLedger>();
     }
 }

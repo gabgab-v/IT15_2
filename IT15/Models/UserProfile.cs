@@ -15,5 +15,7 @@ namespace IT15.Models
         public IdentityUser User { get; set; }
 
         public bool IsArchived { get; set; } = false;
+
+        public int LeaveBalance { get; set; } = 3;
     }
 }

@@ -2,7 +2,61 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Section -->
+<section class="flex flex-col lg:flex-row items-center justify-between flex-grow px-8 bg-white">
+    <!-- Left Content -->
+    <div class="lg:w-1/2 text-left">
+        <h5 class="text-gray-500 uppercase tracking-wider mb-2">Landing Page</h5>
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+            OpenBook<br />HRIS 
+        </h1>
+        <a href="#"
+           class="inline-block mt-6 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-700 transition">
+            Learn More
+        </a>
+    </div>
+
+    <!-- Right Gradient Illustration -->
+    <div class="lg:w-1/2 relative mt-10 lg:mt-0">
+        <div class="rounded-l-full h-80 w-full bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-400 flex items-center justify-center">
+            <!-- Replace with SVG/City Illustration -->
+            <span class="text-white text-xl font-semibold">Streamline Your HR, Empower Your Team</span>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-800">Everything You Need in One Place</h2>
+            <p class="text-gray-600 mt-2">Manage your entire employee lifecycle with our integrated panels.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+
+            <div>
+                <div class="flex justify-center items-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800">Admin Panel</h3>
+                <p class="text-gray-600 mt-2">Oversee system settings, manage user roles, and ensure data integrity across the entire platform.</p>
+            </div>
+
+            <div>
+                <div class="flex justify-center items-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-4">
+                    <i data-lucide="users" class="w-8 h-8 text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800">Human Resources</h3>
+                <p class="text-gray-600 mt-2">Handle employee data, recruitment, onboarding, and performance tracking with intuitive tools.</p>
+            </div>
+
+            <div>
+                <div class="flex justify-center items-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-4">
+                    <i data-lucide="landmark" class="w-8 h-8 text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800">Accounting Panel</h3>
+                <p class="text-gray-600 mt-2">Manage payroll, process claims, and generate financial reports seamlessly within the system.</p>
+            </div>
+        </div>
+    </div>
+</section>

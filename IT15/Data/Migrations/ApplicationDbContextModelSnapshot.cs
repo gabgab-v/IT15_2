@@ -22,6 +22,40 @@ namespace IT15.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("IT15.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("IT15.Models.CompanyLedger", b =>
                 {
                     b.Property<int>("Id")
@@ -83,6 +117,26 @@ namespace IT15.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("DailyLogs");
+                });
+
+            modelBuilder.Entity("IT15.Models.DeliveryService", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Fee")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DeliveryServices");
                 });
 
             modelBuilder.Entity("IT15.Models.LeaveRequest", b =>
@@ -302,6 +356,46 @@ namespace IT15.Data.Migrations
                     b.ToTable("ProductRequests");
                 });
 
+            modelBuilder.Entity("IT15.Models.ResignationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("DateActioned")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateSubmitted")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RequestingEmployeeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("RequestingEmployeeId");
+
+                    b.ToTable("ResignationRequests");
+                });
+
             modelBuilder.Entity("IT15.Models.Supplier", b =>
                 {
                     b.Property<int>("Id")
@@ -326,6 +420,9 @@ namespace IT15.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -355,6 +452,9 @@ namespace IT15.Data.Migrations
                     b.Property<DateTime>("DateRequested")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DeliveryServiceId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
@@ -368,7 +468,12 @@ namespace IT15.Data.Migrations
                     b.Property<int>("SupplyId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("DeliveryServiceId");
 
                     b.HasIndex("RequestingEmployeeId");
 
@@ -387,6 +492,9 @@ namespace IT15.Data.Migrations
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
+
+                    b.Property<int>("LeaveBalance")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -601,6 +709,17 @@ namespace IT15.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("IT15.Models.AuditLog", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("IT15.Models.CompanyLedger", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
@@ -694,6 +813,21 @@ namespace IT15.Data.Migrations
                     b.Navigation("RequestingEmployee");
                 });
 
+            modelBuilder.Entity("IT15.Models.ResignationRequest", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById");
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "RequestingEmployee")
+                        .WithMany()
+                        .HasForeignKey("RequestingEmployeeId");
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("RequestingEmployee");
+                });
+
             modelBuilder.Entity("IT15.Models.Supply", b =>
                 {
                     b.HasOne("IT15.Models.Supplier", "Supplier")
@@ -707,6 +841,12 @@ namespace IT15.Data.Migrations
 
             modelBuilder.Entity("IT15.Models.SupplyRequest", b =>
                 {
+                    b.HasOne("IT15.Models.DeliveryService", "DeliveryService")
+                        .WithMany()
+                        .HasForeignKey("DeliveryServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "RequestingEmployee")
                         .WithMany()
                         .HasForeignKey("RequestingEmployeeId")
@@ -718,6 +858,8 @@ namespace IT15.Data.Migrations
                         .HasForeignKey("SupplyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DeliveryService");
 
                     b.Navigation("RequestingEmployee");
 

@@ -18,36 +18,46 @@
 <body class="bg-gray-100 flex flex-col min-h-screen">
 
     <!-- Navbar -->
-    <header class="bg-white shadow-md">
-        <nav class="container mx-auto flex items-center justify-between px-4 py-3">
-            <a class="text-xl font-bold text-blue-600" asp-area="" asp-controller="Home" asp-action="Index">OpenBook</a>
-            <div class="hidden md:flex items-center space-x-6">
-                <a class="text-gray-700 hover:text-blue-600 transition" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                <a class="text-gray-700 hover:text-blue-600 transition" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <header class="bg-white/80 shadow-md backdrop-blur-sm sticky top-0 z-50">
+        <nav class="flex items-center justify-between px-6 lg:px-8 py-4">
 
-                <!-- THE CHANGE: New Dropdown Menu for Panels -->
+            <a class="text-2xl font-bold text-blue-600" asp-area="" asp-controller="Home" asp-action="Index">OpenBook</a>
+
+            <div class="hidden md:flex items-center gap-x-8">
+                <a class="font-semibold text-blue-600" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+
+                <a class="font-medium text-gray-600 hover:text-blue-600 transition-colors" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+
                 <div class="relative" id="panels-dropdown">
-                    <button id="panels-button" class="flex items-center text-gray-700 hover:text-blue-600 transition">
+                    <button id="panels-button" class="flex items-center font-medium text-gray-600 hover:text-blue-600 transition-colors">
                         <span>Panels</span>
                         <i data-lucide="chevron-down" class="w-4 h-4 ml-1"></i>
                     </button>
-                    <!-- Dropdown Content -->
-                    <div id="panels-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden">
-                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Panel</a>
-                        <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">HR Panel</a>
-                        <a asp-area="Accounting" asp-controller="Dashboard" asp-action="Index" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Accounting Panel</a>
+                    <div id="panels-menu" class="absolute right-0 mt-3 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-2 z-20 hidden">
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-gray-500"></i>
+                            Admin Panel
+                        </a>
+                        <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="users" class="w-4 h-4 text-gray-500"></i>
+                            HR Panel
+                        </a>
+                        <a asp-area="Accounting" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="landmark" class="w-4 h-4 text-gray-500"></i>
+                            Accounting Panel
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <div>
+            <div class="flex items-center gap-x-4">
                 <partial name="_LoginPartial" />
             </div>
         </nav>
     </header>
 
     <!-- Page Body -->
-    <main class="container mx-auto flex-grow px-4 py-6">
+    <main class="flex-grow flex flex-col">
         @RenderBody()
     </main>
 

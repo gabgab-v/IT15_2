@@ -10,6 +10,9 @@ namespace IT15.Models
         [ForeignKey("SupplierId")]
         public Supplier Supplier { get; set; }
         public int StockLevel { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal Cost { get; set; }
     }
 }
 

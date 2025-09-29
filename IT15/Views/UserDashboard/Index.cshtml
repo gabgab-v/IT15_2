@@ -11,8 +11,10 @@
     <p class="text-gray-600 mt-1">Here is your summary for today, @DateTime.Now.ToString("dddd, MMMM dd").</p>
 </div>
 
+<!-- Main Dashboard Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Left Column: Main Actions -->
+
+    <!-- Center Column: Main Content -->
     <div class="lg:col-span-2 space-y-8">
         <!-- Today's Attendance Card -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -23,105 +25,148 @@
                     <p class="text-gray-700 mb-4">You have not checked in yet today.</p>
                     <form asp-action="CheckIn" asp-controller="UserDashboard" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">
-                            Check In Now
-                        </button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700">Check In Now</button>
                     </form>
                 </div>
             }
             else if (Model.AttendanceStatus == TodayAttendanceStatus.CheckedIn)
             {
                 <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                    <p class="text-gray-700 mb-4">You are currently checked in. Don't forget to check out at the end of your day.</p>
+                    <p class="text-gray-700 mb-4">You are currently checked in.</p>
                     <form asp-action="CheckOut" asp-controller="UserDashboard" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700">
-                            Check Out
-                        </button>
+                        <button type="submit" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700">Check Out</button>
                     </form>
                 </div>
             }
-            <!-- THE FIX: New block to handle when a user is checked in but it's too early to check out -->
             else if (Model.AttendanceStatus == TodayAttendanceStatus.CheckedInCannotCheckOut)
             {
-            <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                <div class="flex items-center justify-center text-yellow-800">
-                    <i data-lucide="clock" class="w-6 h-6 mr-2"></i>
-                    <p class="font-semibold">You are currently checked in. Check-out is available after your shift.</p>
+                 <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-center text-gray-700">
+                        <i data-lucide="clock" class="w-6 h-6 mr-2"></i>
+                        <p class="font-semibold">You are currently checked in. Check-out is available after your shift.</p>
+                    </div>
                 </div>
-            </div>
             }
-            else 
+            else
             {
-            <div class="text-center p-4 bg-green-50 rounded-lg">
-                <div class="flex items-center justify-center text-green-700">
-                    <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i>
-                    <p class="font-semibold">Your attendance for today is complete. Well done!</p>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="flex items-center justify-center text-green-700">
+                        <i data-lucide="check-circle" class="w-6 h-6 mr-2"></i>
+                        <p class="font-semibold">Your attendance for today is complete.</p>
+                    </div>
                 </div>
-            </div>
             }
         </div>
 
-        <!-- Quick Links -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <a asp-action="LeaveRequests" class="block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow-md transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-800">My Leave Requests</h3>
-                <p class="text-gray-600 mt-1 text-sm">Apply for leave and view your request history.</p>
-            </a>
-            <a asp-action="PaySlips" class="block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-500 hover:shadow-md transition-shadow">
-                <h3 class="text-lg font-semibold text-gray-800">My Pay Slips</h3>
-                <p class="text-gray-600 mt-1 text-sm">View and download your monthly pay slips.</p>
-            </a>
+        <!-- Sales Performance Chart -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-xl font-semibold text-gray-700 mb-4">Your Sales Performance (Last 6 Months)</h3>
+            <div class="h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <!-- Right Column: Summaries -->
+    <!-- Right Column: Summaries & Activity -->
     <div class="space-y-6">
-        <!-- Upcoming Time Off -->
+        <!-- Leave Balance Chart -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700 mb-3">Upcoming Approved Leave</h3>
-            @if (Model.UpcomingLeave != null)
-            {
-                <div class="bg-gray-50 p-4 rounded-md">
-                    <p class="font-bold text-gray-800">@Model.UpcomingLeave.StartDate.ToString("MMM dd") - @Model.UpcomingLeave.EndDate.ToString("MMM dd, yyyy")</p>
-                    <p class="text-sm text-gray-600">@Model.UpcomingLeave.Reason</p>
-                </div>
-            }
-            else
-            {
-                <p class="text-sm text-gray-500">You have no upcoming approved leave.</p>
-            }
-        </div>
-
-        <!-- Pending Leave Requests -->
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700 mb-3">Pending Leave Requests</h3>
-            @if (Model.PendingLeaveRequestsCount > 0)
-            {
-                <p class="text-2xl font-bold text-blue-600">@Model.PendingLeaveRequestsCount</p>
-                <p class="text-sm text-gray-500">leave requests awaiting approval.</p>
-            }
-            else
-            {
-                <p class="text-sm text-gray-500">You have no pending leave requests.</p>
-            }
-        </div>
-
-        <!-- Overtime Summary Card -->
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-700 mb-3">Overtime Summary</h3>
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-gray-500">Approved OT this month</p>
-                    <p class="text-2xl font-bold text-gray-800">@Model.ApprovedOvertimeHoursThisMonth.ToString("F2") <span class="text-base font-normal">hours</span></p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Pending OT requests</p>
-                    <p class="text-2xl font-bold text-blue-600">@Model.PendingOvertimeRequestsCount</p>
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Annual Leave Balance</h3>
+            <div class="relative h-48 w-48 mx-auto">
+                <canvas id="leaveChart"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-3xl font-bold text-gray-800">@Model.LeaveDaysRemaining</span>
+                    <span class="text-sm text-gray-500">Days Left</span>
                 </div>
             </div>
-            <a asp-action="OvertimeRequests" class="text-blue-600 hover:underline mt-4 inline-block font-medium text-sm">Manage Overtime &rarr;</a>
+            <a asp-action="LeaveRequests" class="text-blue-600 hover:underline mt-4 inline-block font-medium text-sm w-full text-center">Manage Leave &rarr;</a>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Recent Activity</h3>
+            <ul class="space-y-4">
+                @foreach(var activity in Model.RecentActivity)
+                {
+                    <li class="flex items-start">
+                        <div class="bg-gray-100 p-2 rounded-full mr-3">
+                            <i data-lucide="@activity.Icon" class="w-5 h-5 text-gray-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-800">@activity.Description</p>
+                            <p class="text-xs text-gray-500">@activity.Timestamp.ToString("MMM dd 'at' h:mm tt")</p>
+                        </div>
+                    </li>
+                }
+            </ul>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Leave Balance Donut Chart ---
+            const leaveCtx = document.getElementById('leaveChart');
+            if (leaveCtx) {
+                new Chart(leaveCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Used', 'Remaining'],
+                        datasets: [{
+                            data: [@Model.LeaveDaysUsed, @Model.LeaveDaysRemaining],
+                            backgroundColor: ['#f59e0b', '#3b82f6'],
+                            borderWidth: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        cutout: '75%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            }
+
+            // --- Sales Performance Line Chart ---
+            const salesCtx = document.getElementById('salesChart');
+            if (salesCtx) {
+                const salesLabels = @Html.Raw(Json.Serialize(Model.SalesChartLabels));
+                const salesData = @Html.Raw(Json.Serialize(Model.SalesChartData));
+
+                const gradient = salesCtx.getContext('2d').createLinearGradient(0, 0, 0, 250);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+                gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+                new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: salesLabels,
+                        datasets: [{
+                            label: 'Monthly Sales Revenue',
+                            data: salesData,
+                            backgroundColor: gradient,
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#3b82f6',
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        });
+    </script>
+}
 

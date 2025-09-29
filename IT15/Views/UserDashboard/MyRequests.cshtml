@@ -1,8 +1,9 @@
 ﻿@model IEnumerable<IT15.Models.SupplyRequest>
 
 @{
-    ViewData["Title"] = "My Supply Requests";
+    ViewData["Title"] = "Supply Request History";
     Layout = "~/Views/UserDashboard/_Layout.cshtml";
+    var culture = new System.Globalization.CultureInfo("en-PH");
 
     string GetStatusBadgeClass(SupplyRequestStatus status)
     {
@@ -18,8 +19,8 @@
 
 <div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
     <div>
-        <h2 class="text-2xl font-bold text-gray-900">My Supply Request History</h2>
-        <p class="text-gray-500 mt-1">Track the status of your past requests.</p>
+        <h2 class="text-2xl font-bold text-gray-900">Supply Request History</h2>
+        <p class="text-gray-500 mt-1">A log of all supply requests made by employees.</p>
     </div>
     <a asp-action="SupplyCatalog" class="text-sm font-medium text-blue-600 hover:text-blue-800">
         &larr; Back to Catalog
@@ -31,10 +32,12 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Requested</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested By</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Supply</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Cost</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -47,12 +50,18 @@
                                 @request.DateRequested.ToString("MMM dd, yyyy")
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                @request.Supply.Name
+                                @request.RequestingEmployee?.UserName
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                @request.Supply?.Name
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                                 @request.Quantity
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-800">
+                                @request.TotalCost.ToString("C", culture)
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusBadgeClass(request.Status)">
                                     @request.Status.ToString()
                                 </span>
@@ -63,10 +72,11 @@
                 else
                 {
                     <tr>
-                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">You have not made any supply requests yet.</td>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">No supply requests have been made yet.</td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 </div>
+

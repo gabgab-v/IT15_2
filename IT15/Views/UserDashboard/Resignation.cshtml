@@ -1,0 +1,54 @@
+﻿@model IT15.ViewModels.ResignationViewModel
+
+@{
+    ViewData["Title"] = "Submit Resignation";
+}
+
+<div class="border-b border-gray-200 pb-4 mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Employee Resignation</h2>
+    <p class="text-gray-500 mt-1">Submit your resignation request or view its current status.</p>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
+        <p>@TempData["SuccessMessage"]</p>
+    </div>
+}
+
+<div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-2xl">
+    @if (Model.ExistingRequest != null)
+    {
+        <!-- Display status of existing request -->
+        <h3 class="text-lg font-semibold text-gray-800">Your Resignation Status</h3>
+        <div class="mt-4 space-y-2">
+            <p><strong>Effective Date:</strong> @Model.ExistingRequest.EffectiveDate.ToString("MMMM dd, yyyy")</p>
+            <p><strong>Status:</strong> <span class="font-bold">@Model.ExistingRequest.Status</span></p>
+            <p><strong>Reason Submitted:</strong></p>
+            <p class="p-4 bg-gray-50 rounded-md border">@Model.ExistingRequest.Reason</p>
+        </div>
+    }
+    else
+    {
+        <!-- Show the submission form, binding to the NewRequest property -->
+        <h3 class="text-lg font-semibold text-gray-800">Resignation Form</h3>
+        <form asp-action="SubmitResignation" method="post" class="space-y-6 mt-4">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-red-600 bg-red-50 p-3 rounded-md"></div>
+            <div>
+                <label asp-for="NewRequest.EffectiveDate" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="NewRequest.EffectiveDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                <span asp-validation-for="NewRequest.EffectiveDate" class="text-red-600 text-sm"></span>
+            </div>
+            <div>
+                <label asp-for="NewRequest.Reason" class="block text-sm font-medium text-gray-700">Reason for Resignation</label>
+                <textarea asp-for="NewRequest.Reason" rows="5" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                <span asp-validation-for="NewRequest.Reason" class="text-red-600 text-sm"></span>
+            </div>
+            <button type="submit" class="w-full bg-red-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-red-700">
+                Submit Resignation Request
+            </button>
+        </form>
+    }
+</div>
+
