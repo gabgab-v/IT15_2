@@ -107,7 +107,7 @@ namespace IT15.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.Identity.Name;
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var now = DateTime.UtcNow;
 
             // Use the helper method for a consistent, secure check on the server

@@ -26,7 +26,7 @@ namespace IT15.Areas.Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
 
             var viewModel = new DashboardViewModel
             {
