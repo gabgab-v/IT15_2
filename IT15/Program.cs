@@ -4,19 +4,38 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Resend;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
-
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// --- FIX: Convert Render DATABASE_URL to Npgsql format ---
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// --- KEY CHANGE ---
-// Switched from UseSqlServer to UseNpgsql to connect to your PostgreSQL database.
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    // Parse URL and convert to Npgsql format
+    var databaseUri = new Uri(databaseUrl);
+    var userInfo = databaseUri.UserInfo.Split(':');
+
+    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+    {
+        Host = databaseUri.Host,
+        Port = databaseUri.Port > 0 ? databaseUri.Port : 5432,
+        Username = userInfo[0],
+        Password = userInfo[1],
+        Database = databaseUri.AbsolutePath.TrimStart('/'),
+        SslMode = SslMode.Require,
+        TrustServerCertificate = true
+    };
+
+    connectionString = npgsqlBuilder.ConnectionString;
+}
+
+// --- Use Npgsql DbContext with the properly formatted connection string ---
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<IT15.Services.PayrollService>();
@@ -35,37 +54,24 @@ builder.Logging.AddConsole();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<ISmsSender, SmsSender>();
 builder.Services.AddHttpClient<HolidayApiService>();
-
 builder.Services.AddHttpClient<IncomeApiService>(client =>
 {
     client.BaseAddress = new Uri("https://fakestoreapi.com/");
 });
-
 builder.Services.AddScoped<IAuditService, AuditService>();
-
-// Configure Resend using the recommended IHttpClientFactory approach.
-
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnRedirectToLogin = context =>
     {
         if (context.Request.Path.StartsWithSegments("/Admin"))
-        {
             context.Response.Redirect("/Admin/Account/Login");
-        }
         else if (context.Request.Path.StartsWithSegments("/HumanResource"))
-        {
             context.Response.Redirect("/HumanResource/Account/Login");
-        }
         else if (context.Request.Path.StartsWithSegments("/Accounting"))
-        {
             context.Response.Redirect("/Accounting/Account/Login");
-        }
         else
-        {
             context.Response.Redirect("/Identity/Account/Login");
-        }
         return Task.CompletedTask;
     };
 });
@@ -80,7 +86,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        // This line applies any pending migrations.
         dbContext.Database.Migrate();
     }
     catch (Exception ex)
@@ -90,14 +95,12 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Seed the database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var configuration = services.GetRequiredService<IConfiguration>();
-        // THE FIX: This line is now active and will call your seeder.
         await SeedData.Initialize(services, configuration);
     }
     catch (Exception ex)
@@ -107,11 +110,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
-// THIS IS THE MOST IMPORTANT SECTION FOR DEBUGGING
 if (app.Environment.IsDevelopment())
 {
-    // This will replace the "page not exist" error with a detailed error report.
     app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
 }
@@ -124,9 +124,8 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// The order of these three lines is CRITICAL for routing and security to work.
 app.UseRouting();
-app.UseAuthentication(); // <-- This was likely missing and is required.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
