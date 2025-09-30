@@ -67,10 +67,14 @@ if (IsRunningOnRender())
 }
 else
 {
-    // Local dev: persist keys in the database
-    //builder.Services.AddDataProtection()
-       // .PersistKeysToDbContext<ApplicationDbContext>()
-        //.SetApplicationName("IT15");
+   
+        builder.Services.AddDbContext<DataProtectionKeyContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<DataProtectionKeyContext>()
+            .SetApplicationName("IT15");
+    
 }
 
 // --- Identity ---
