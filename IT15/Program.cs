@@ -9,8 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+// --- KEY CHANGE ---
+// Switched from UseSqlServer to UseNpgsql to connect to your PostgreSQL database.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<IT15.Services.PayrollService>();
 
@@ -23,8 +27,6 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 builder.Logging.AddConsole();
-
-// --- KEY CHANGES ---
 
 // 1. Register your custom EmailSender service
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -119,4 +121,3 @@ app.MapControllerRoute(
 app.MapRazorPages();
 
 app.Run();
-
