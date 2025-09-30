@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <label for="transactionMonth" class="block text-sm font-medium text-gray-700">Expense Month</label>
-                    <input type="month" name="transactionMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required value="@DateTime.Now.ToString("yyyy-MM")" />
+                    <input type="month" name="transactionMonth" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required value="@DateTime.UtcNow.ToString("yyyy-MM")" />
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
                     Record Expense

@@ -53,7 +53,7 @@ namespace IT15.Areas.HumanResource.Controllers
                 var approverId = _userManager.GetUserId(User);
                 request.Status = OvertimeStatus.Approved;
                 request.ApprovedById = approverId;
-                request.DateActioned = System.DateTime.Now;
+                request.DateActioned = System.DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 // --- AUDIT LOG ---
@@ -77,7 +77,7 @@ namespace IT15.Areas.HumanResource.Controllers
                 var denierId = _userManager.GetUserId(User);
                 request.Status = OvertimeStatus.Denied;
                 request.ApprovedById = denierId;
-                request.DateActioned = System.DateTime.Now;
+                request.DateActioned = System.DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 // --- AUDIT LOG ---

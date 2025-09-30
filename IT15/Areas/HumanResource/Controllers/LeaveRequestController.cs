@@ -86,7 +86,7 @@ namespace IT15.Areas.HumanResource.Controllers
                     userProfile.LeaveBalance -= requestedDays;
 
                     request.Status = LeaveRequestStatus.Approved;
-                    request.DateActioned = DateTime.Now;
+                    request.DateActioned = DateTime.UtcNow;
                     request.ApprovedById = approver.Id;
 
                     // Save changes to both the request and the user's profile.
@@ -123,7 +123,7 @@ namespace IT15.Areas.HumanResource.Controllers
             {
                 var denier = await _userManager.GetUserAsync(User);
                 request.Status = LeaveRequestStatus.Denied;
-                request.DateActioned = DateTime.Now;
+                request.DateActioned = DateTime.UtcNow;
                 request.ApprovedById = denier.Id;
                 await _context.SaveChangesAsync();
 

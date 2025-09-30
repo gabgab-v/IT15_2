@@ -22,7 +22,7 @@ namespace IT15.Services
                 UserName = userName,
                 ActionType = actionType,
                 Details = details,
-                Timestamp = DateTime.Now
+                Timestamp = DateTime.UtcNow
             };
 
             _context.AuditLogs.Add(auditLog);

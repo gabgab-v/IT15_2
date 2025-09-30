@@ -3,73 +3,49 @@ using IT15.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
 using Resend;
 using Npgsql;
-using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Function to determine if we're running on Render
+// --- Determine environment ---
 bool IsRunningOnRender() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER"));
 
-// Get connection string - prioritize environment variables over appsettings
+// --- Database connection setup ---
 string? connectionString = null;
-
-// Check for DATABASE_URL (Render's PostgreSQL URL format)
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    try
+    var databaseUri = new Uri(databaseUrl);
+    var userInfo = databaseUri.UserInfo.Split(':');
+    bool isInternal = !databaseUri.Host.Contains(".");
+
+    connectionString = new NpgsqlConnectionStringBuilder
     {
-        var databaseUri = new Uri(databaseUrl);
-        var userInfo = databaseUri.UserInfo.Split(':');
+        Host = databaseUri.Host,
+        Port = databaseUri.Port == -1 ? 5432 : databaseUri.Port,
+        Database = databaseUri.AbsolutePath.TrimStart('/'),
+        Username = userInfo[0],
+        Password = userInfo[1],
+        SslMode = isInternal ? SslMode.Disable : SslMode.Require,
+        TrustServerCertificate = true
+    }.ConnectionString;
 
-        // Check if it's internal connection (no dots in hostname for internal URLs)
-        bool isInternal = !databaseUri.Host.Contains(".");
-
-        var npgsqlConnStr = new NpgsqlConnectionStringBuilder
-        {
-            Host = databaseUri.Host,
-            Port = databaseUri.Port == -1 ? 5432 : databaseUri.Port,
-            Database = databaseUri.AbsolutePath.TrimStart('/'),
-            Username = userInfo[0],
-            Password = userInfo[1],
-            // Internal connections don't need SSL
-            SslMode = isInternal ? SslMode.Disable : SslMode.Require,
-            TrustServerCertificate = true
-        };
-
-        connectionString = npgsqlConnStr.ConnectionString;
-        Console.WriteLine($"Using {(isInternal ? "INTERNAL" : "EXTERNAL")} database connection");
-        Console.WriteLine($"Host: {databaseUri.Host}");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
-    }
+    Console.WriteLine($"Using {(isInternal ? "INTERNAL" : "EXTERNAL")} database connection: {databaseUri.Host}");
 }
-
-// Fall back to appsettings if no environment variable is set
-if (string.IsNullOrEmpty(connectionString))
+else
 {
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("No database connection string found.");
     Console.WriteLine("Using connection string from appsettings");
 }
 
-// Validate we have a connection string
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException(
-        "No database connection string found. " +
-        "Please set DATABASE_URL or configure DefaultConnection in appsettings.");
-}
-
-// Add DbContext
+// --- Add DbContext ---
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
-    // Enable sensitive data logging in development
     if (builder.Environment.IsDevelopment())
     {
         options.EnableSensitiveDataLogging();
@@ -77,74 +53,59 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 });
 
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddScoped<IT15.Services.PayrollService>();
-
-// Configure Data Protection
+// --- Data Protection fix for Antiforgery ---
 if (IsRunningOnRender())
 {
-    // On Render, use a persistent directory
+    // Use a persistent directory on Render
     var keysDirectory = new DirectoryInfo("/opt/render/project/.keys");
-    if (!keysDirectory.Exists)
-    {
-        keysDirectory.Create();
-    }
+    if (!keysDirectory.Exists) keysDirectory.Create();
 
     builder.Services.AddDataProtection()
         .PersistKeysToFileSystem(keysDirectory)
         .SetApplicationName("IT15");
-
     Console.WriteLine($"Data Protection keys directory: {keysDirectory.FullName}");
 }
 else
 {
-    // Local development - use default
-    builder.Services.AddDataProtection()
-        .SetApplicationName("IT15");
+    // Local dev: persist keys in the database
+    //builder.Services.AddDataProtection()
+       // .PersistKeysToDbContext<ApplicationDbContext>()
+        //.SetApplicationName("IT15");
 }
 
-
+// --- Identity ---
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Configuration
-    .AddUserSecrets<Program>()
-    .AddEnvironmentVariables();
-
-builder.Logging.AddConsole();
-
-// Register services
+// --- Other services ---
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddScoped<PayrollService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<ISmsSender, SmsSender>();
 builder.Services.AddHttpClient<HolidayApiService>();
-builder.Services.AddHttpClient<IncomeApiService>(client =>
-{
-    client.BaseAddress = new Uri("https://fakestoreapi.com/");
-});
+builder.Services.AddHttpClient<IncomeApiService>(c => c.BaseAddress = new Uri("https://fakestoreapi.com/"));
 builder.Services.AddScoped<IAuditService, AuditService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnRedirectToLogin = context =>
     {
-        if (context.Request.Path.StartsWithSegments("/Admin"))
-            context.Response.Redirect("/Admin/Account/Login");
-        else if (context.Request.Path.StartsWithSegments("/HumanResource"))
-            context.Response.Redirect("/HumanResource/Account/Login");
-        else if (context.Request.Path.StartsWithSegments("/Accounting"))
-            context.Response.Redirect("/Accounting/Account/Login");
-        else
-            context.Response.Redirect("/Identity/Account/Login");
+        var path = context.Request.Path;
+        context.Response.Redirect(path.StartsWithSegments("/Admin") ? "/Admin/Account/Login" :
+                                  path.StartsWithSegments("/HumanResource") ? "/HumanResource/Account/Login" :
+                                  path.StartsWithSegments("/Accounting") ? "/Accounting/Account/Login" :
+                                  "/Identity/Account/Login");
         return Task.CompletedTask;
     };
 });
 
 builder.Services.AddControllersWithViews();
 
+// --- Build the app ---
 var app = builder.Build();
 
-// Test database connection and apply migrations
+// --- Database initialization & migrations ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -153,59 +114,41 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
-        // Test connection
-        var canConnect = await dbContext.Database.CanConnectAsync();
-        if (canConnect)
+        if (await dbContext.Database.CanConnectAsync())
         {
-            logger.LogInformation("Successfully connected to database");
-            Console.WriteLine(" Database connection successful!");
-
-            // Apply migrations
-            logger.LogInformation("Applying database migrations...");
+            logger.LogInformation("Database connection successful!");
             await dbContext.Database.MigrateAsync();
-            logger.LogInformation("Database migrations completed");
-            Console.WriteLine(" Migrations applied successfully!");
+            logger.LogInformation("Database migrations applied.");
         }
         else
         {
-            logger.LogError("Cannot connect to database");
-            Console.WriteLine(" Failed to connect to database!");
+            logger.LogError("Cannot connect to database!");
         }
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "Database initialization failed");
-        Console.WriteLine($" Database error: {ex.Message}");
-
-        // In production, we might want to fail fast
-        if (app.Environment.IsProduction() && IsRunningOnRender())
-        {
-            throw; // This will cause the deployment to fail, which is what we want
-        }
+        if (app.Environment.IsProduction() && IsRunningOnRender()) throw;
     }
 }
 
-// Seed data
+// --- Seed data ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
-
     try
     {
-        var configuration = services.GetRequiredService<IConfiguration>();
-        await SeedData.Initialize(services, configuration);
+        await SeedData.Initialize(services, services.GetRequiredService<IConfiguration>());
         logger.LogInformation("Database seeding completed");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while seeding the database");
-        // Don't fail the app for seeding errors
+        logger.LogError(ex, "Database seeding error");
     }
 }
 
-// Configure the HTTP request pipeline
+// --- Middleware & routing ---
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -219,7 +162,6 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

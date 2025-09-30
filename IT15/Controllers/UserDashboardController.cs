@@ -108,7 +108,7 @@ namespace IT15.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.Identity.Name;
             var today = DateTime.Today;
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // Use the helper method for a consistent, secure check on the server
             var scheduledEndDateTime = GetScheduledEndDateTimeForToday();
@@ -128,7 +128,7 @@ namespace IT15.Controllers
                 return RedirectToAction("DailyLogs");
             }
 
-            todaysLog.CheckOutTime = DateTime.Now;
+            todaysLog.CheckOutTime = DateTime.UtcNow;
 
             // ... (Your existing early checkout and overtime logic remains here)
 
@@ -147,7 +147,7 @@ namespace IT15.Controllers
             if (todaysLog.CheckOutTime.HasValue) return TodayAttendanceStatus.Completed;
 
             var scheduledEndTime = GetScheduledEndDateTimeForToday();
-            return DateTime.Now < scheduledEndTime ? TodayAttendanceStatus.CheckedInCannotCheckOut : TodayAttendanceStatus.CheckedIn;
+            return DateTime.UtcNow < scheduledEndTime ? TodayAttendanceStatus.CheckedInCannotCheckOut : TodayAttendanceStatus.CheckedIn;
         }
 
         // THE FIX: The duplicate method has been removed. This is the single, correct version.
@@ -166,7 +166,7 @@ namespace IT15.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var today = DateTime.Today;
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // Read the policy from appsettings.json
             var policy = _configuration.GetSection("AttendancePolicy");
@@ -200,7 +200,7 @@ namespace IT15.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.Identity.Name;
             var today = DateTime.Today;
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             bool alreadyCheckedIn = await _context.DailyLogs.AnyAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
             if (alreadyCheckedIn)
@@ -258,7 +258,7 @@ namespace IT15.Controllers
             if (ModelState.IsValid)
             {
                 overtimeRequest.RequestingEmployeeId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                overtimeRequest.DateRequested = DateTime.Now;
+                overtimeRequest.DateRequested = DateTime.UtcNow;
                 overtimeRequest.Status = OvertimeStatus.PendingApproval;
                 _context.Add(overtimeRequest);
                 await _context.SaveChangesAsync();
@@ -325,7 +325,7 @@ namespace IT15.Controllers
             if (ModelState.IsValid)
             {
                 leaveRequest.RequestingEmployeeId = userId;
-                leaveRequest.DateRequested = DateTime.Now;
+                leaveRequest.DateRequested = DateTime.UtcNow;
                 leaveRequest.Status = LeaveRequestStatus.Pending;
 
                 _context.Add(leaveRequest);
@@ -414,7 +414,7 @@ namespace IT15.Controllers
             var saleTransaction = new CompanyLedger
             {
                 UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                TransactionDate = DateTime.Now,
+                TransactionDate = DateTime.UtcNow,
                 Description = $"{quantity} x Sale of {productName}",
                 Amount = finalTransactionAmount // Use the new combined amount here
             };
@@ -535,7 +535,7 @@ namespace IT15.Controllers
                         DeliveryServiceId = deliveryServiceId,
                         TotalCost = (supply.Cost * quantity) + delivery.Fee,
                         RequestingEmployeeId = currentUser.Id,
-                        DateRequested = DateTime.Now,
+                        DateRequested = DateTime.UtcNow,
                         Status = SupplyRequestStatus.Approved
                     };
                     _context.SupplyRequests.Add(request);
@@ -543,7 +543,7 @@ namespace IT15.Controllers
                     var deliveryExpense = new CompanyLedger
                     {
                         UserId = currentUser.Id,
-                        TransactionDate = DateTime.Now,
+                        TransactionDate = DateTime.UtcNow,
                         Description = $"Delivery Fee: {delivery.Name} from {supply.Supplier.Name} for {supply.Name}",
                         Amount = -delivery.Fee
                     };
@@ -553,7 +553,7 @@ namespace IT15.Controllers
                     var supplyExpense = new CompanyLedger
                     {
                         UserId = currentUser.Id,
-                        TransactionDate = DateTime.Now,
+                        TransactionDate = DateTime.UtcNow,
                         Description = $"Supply Cost: {quantity} x {supply.Name}",
                         Amount = -supplyCost
                     };
@@ -605,7 +605,7 @@ namespace IT15.Controllers
                     ProductName = productName,
                     PricePerUnit = price,
                     Quantity = quantity,
-                    DateRequested = DateTime.Now,
+                    DateRequested = DateTime.UtcNow,
                     // THE CHANGE: The status is now set directly to Approved.
                     Status = ProductRequestStatus.Approved
                 };
@@ -672,7 +672,7 @@ namespace IT15.Controllers
             if (ModelState.IsValid)
             {
                 resignationRequest.RequestingEmployeeId = userId;
-                resignationRequest.DateSubmitted = DateTime.Now;
+                resignationRequest.DateSubmitted = DateTime.UtcNow;
                 resignationRequest.Status = ResignationStatus.Pending;
 
                 _context.ResignationRequests.Add(resignationRequest);

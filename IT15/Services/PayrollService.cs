@@ -30,7 +30,7 @@ namespace IT15.Services
             var payroll = new Payroll
             {
                 PayrollMonth = payrollMonth,
-                DateGenerated = DateTime.Now,
+                DateGenerated = DateTime.UtcNow,
                 Status = PayrollStatus.PendingApproval
             };
 

@@ -31,7 +31,7 @@ namespace IT15.Controllers
                 // THE FIX: Combine the country code and phone number into a single string.
                 application.PhoneNumber = application.CountryCode + application.PhoneNumber;
 
-                application.DateApplied = DateTime.Now;
+                application.DateApplied = DateTime.UtcNow;
                 application.Status = ApplicationStatus.Pending;
 
                 _context.JobApplications.Add(application);

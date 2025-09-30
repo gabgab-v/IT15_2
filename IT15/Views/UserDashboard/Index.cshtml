@@ -8,7 +8,7 @@
 <!-- Welcome Header -->
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-800">Welcome, @User.Identity.Name!</h1>
-    <p class="text-gray-600 mt-1">Here is your summary for today, @DateTime.Now.ToString("dddd, MMMM dd").</p>
+    <p class="text-gray-600 mt-1">Here is your summary for today, @DateTime.UtcNow.ToString("dddd, MMMM dd").</p>
 </div>
 
 <!-- Main Dashboard Grid -->

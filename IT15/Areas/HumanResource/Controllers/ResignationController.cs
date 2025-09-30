@@ -50,7 +50,7 @@ namespace IT15.Areas.HumanResource.Controllers
 
                 // 1. Approve the request
                 request.Status = ResignationStatus.Approved;
-                request.DateActioned = DateTime.Now;
+                request.DateActioned = DateTime.UtcNow;
                 request.ApprovedById = approver.Id;
 
                 // 2. Archive the user by updating their profile
@@ -80,7 +80,7 @@ namespace IT15.Areas.HumanResource.Controllers
             {
                 var denier = await _userManager.GetUserAsync(User);
                 request.Status = ResignationStatus.Denied;
-                request.DateActioned = DateTime.Now;
+                request.DateActioned = DateTime.UtcNow;
                 request.ApprovedById = denier.Id;
 
                 await _context.SaveChangesAsync();

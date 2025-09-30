@@ -91,13 +91,13 @@ namespace IT15.Areas.Accounting.Controllers
             }
 
             payroll.Status = PayrollStatus.BudgetApproved;
-            payroll.DateApproved = DateTime.Now;
+            payroll.DateApproved = DateTime.UtcNow;
             payroll.ApprovedById = currentUser.Id;
 
             _context.CompanyLedger.Add(new CompanyLedger
             {
                 UserId = currentUser.Id,
-                TransactionDate = DateTime.Now,
+                TransactionDate = DateTime.UtcNow,
                 Description = $"Payroll expense for {payroll.PayrollMonth:MMMM yyyy}",
                 Amount = -totalPayrollCost
             });
