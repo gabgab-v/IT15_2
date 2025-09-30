@@ -28,7 +28,7 @@ namespace IT15.Services
             }
 
             var upcomingHolidays = new List<Holiday>();
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
 
             // Loop through each day for the next 90 days.
             for (int i = 0; i < daysToLookAhead; i++)

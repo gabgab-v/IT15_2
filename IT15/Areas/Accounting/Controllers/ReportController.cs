@@ -23,7 +23,7 @@ namespace IT15.Areas.Accounting.Controllers
         // GET: /Accounting/Report
         public async Task<IActionResult> Index(DateTime? reportMonth)
         {
-            var monthToQuery = reportMonth ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var monthToQuery = reportMonth ?? new DateTime(DateTime.UtcNow.Date.Year, DateTime.UtcNow.Date.Month, 1);
             var startOfMonth = new DateTime(monthToQuery.Year, monthToQuery.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1);
 

@@ -28,7 +28,7 @@ namespace IT15.Areas.HumanResource.Controllers
         // THE CHANGE: The Index action now accepts startDate and endDate parameters.
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate)
         {
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             // Default the date range to the last 7 days if not provided.
             var start = startDate ?? today.AddDays(-6);
             var end = endDate ?? today;

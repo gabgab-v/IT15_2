@@ -42,7 +42,7 @@ namespace IT15.Areas.HumanResource.Controllers
             var employee = await _userManager.FindByIdAsync(id);
             if (employee == null) return NotFound();
 
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var startOfMonth = new DateTime(today.Year, today.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1);
             var daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);

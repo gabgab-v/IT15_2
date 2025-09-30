@@ -40,7 +40,7 @@ namespace IT15.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId) ?? new UserProfile { LeaveBalance = 3 };
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
 
             var todaysLog = await _context.DailyLogs.FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
             var attendanceStatus = GetAttendanceStatus(todaysLog);
@@ -155,7 +155,7 @@ namespace IT15.Controllers
         {
             var policy = _configuration.GetSection("AttendancePolicy");
             var scheduledEndTimeSpan = TimeSpan.Parse(policy["ScheduledEndTime"]);
-            return DateTime.Today.Add(scheduledEndTimeSpan);
+            return DateTime.UtcNow.Date.Add(scheduledEndTimeSpan);
         }
 
         #region Other Actions
@@ -165,7 +165,7 @@ namespace IT15.Controllers
         public async Task<IActionResult> DailyLogs()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var now = DateTime.UtcNow;
 
             // Read the policy from appsettings.json
@@ -199,7 +199,7 @@ namespace IT15.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.Identity.Name;
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var now = DateTime.UtcNow;
 
             bool alreadyCheckedIn = await _context.DailyLogs.AnyAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
@@ -295,7 +295,8 @@ namespace IT15.Controllers
 
             var model = new UserDashboardViewModel
             {
-                LeaveRequest = new LeaveRequest { StartDate = DateTime.Today, EndDate = DateTime.Today },
+                LeaveRequest = new LeaveRequest { StartDate = DateTime.UtcNow.Date, EndDate = DateTime.UtcNow.Date
+        },
                 AvailableLeaveDays = userProfile.LeaveBalance
             };
 
@@ -434,7 +435,7 @@ namespace IT15.Controllers
         [HttpGet]
         public async Task<IActionResult> SalesHistory(string filterType, DateTime? startDate, DateTime? endDate, string employeeId)
         {
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             if (filterType == "daily")
             {
                 startDate = today;
