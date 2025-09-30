@@ -16,23 +16,29 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
 if (!string.IsNullOrEmpty(databaseUrl))
 {
-    // Parse URL and convert to Npgsql format
     var databaseUri = new Uri(databaseUrl);
     var userInfo = databaseUri.UserInfo.Split(':');
 
-    var npgsqlBuilder = new NpgsqlConnectionStringBuilder
+    var npgsqlConnStr = new Npgsql.NpgsqlConnectionStringBuilder
     {
         Host = databaseUri.Host,
-        Port = databaseUri.Port > 0 ? databaseUri.Port : 5432,
+        Port = databaseUri.Port,
+        Database = databaseUri.AbsolutePath.TrimStart('/'),
         Username = userInfo[0],
         Password = userInfo[1],
-        Database = databaseUri.AbsolutePath.TrimStart('/'),
-        SslMode = SslMode.Require,
+        SslMode = Npgsql.SslMode.Require,
         TrustServerCertificate = true
     };
 
-    connectionString = npgsqlBuilder.ConnectionString;
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(npgsqlConnStr.ConnectionString));
 }
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
+
 
 // --- Use Npgsql DbContext with the properly formatted connection string ---
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
