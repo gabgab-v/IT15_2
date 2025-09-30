@@ -9,47 +9,106 @@ using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- FIX: Convert Render DATABASE_URL to Npgsql format ---
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Function to determine if we're running on Render
+bool IsRunningOnRender() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER"));
 
+// Get connection string - prioritize environment variables over appsettings
+string? connectionString = null;
+
+// Check for DATABASE_URL (Render's PostgreSQL URL format)
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var databaseUrlInternal = Environment.GetEnvironmentVariable("DATABASE_URL_INTERNAL");
 
-if (!string.IsNullOrEmpty(databaseUrl))
+// Prefer internal URL when available (better performance on Render)
+var urlToUse = !string.IsNullOrEmpty(databaseUrlInternal) ? databaseUrlInternal : databaseUrl;
+
+if (!string.IsNullOrEmpty(urlToUse))
 {
-    var databaseUri = new Uri(databaseUrl);
-    var userInfo = databaseUri.UserInfo.Split(':');
-
-    var npgsqlConnStr = new Npgsql.NpgsqlConnectionStringBuilder
+    try
     {
-        Host = databaseUri.Host,
-        Port = databaseUri.Port,
-        Database = databaseUri.AbsolutePath.TrimStart('/'),
-        Username = userInfo[0],
-        Password = userInfo[1],
-        SslMode = Npgsql.SslMode.Require,
-        TrustServerCertificate = true
-    };
+        var databaseUri = new Uri(urlToUse);
+        var userInfo = databaseUri.UserInfo.Split(':');
 
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(npgsqlConnStr.ConnectionString));
+        // Check if it's internal connection (no dots in hostname)
+        bool isInternal = !databaseUri.Host.Contains(".");
+
+        var npgsqlConnStr = new NpgsqlConnectionStringBuilder
+        {
+            Host = databaseUri.Host,
+            Port = databaseUri.Port == -1 ? 5432 : databaseUri.Port,
+            Database = databaseUri.AbsolutePath.TrimStart('/'),
+            Username = userInfo[0],
+            Password = userInfo[1],
+            // Internal connections don't need SSL
+            SslMode = isInternal ? SslMode.Disable : SslMode.Require,
+            TrustServerCertificate = true
+        };
+
+        connectionString = npgsqlConnStr.ConnectionString;
+
+        // Log which connection type we're using
+        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
+        Console.WriteLine($"Using {(isInternal ? "INTERNAL" : "EXTERNAL")} database connection");
+        Console.WriteLine($"Host: {databaseUri.Host}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+    }
 }
-else
+
+// Fall back to appsettings if no environment variable is set
+if (string.IsNullOrEmpty(connectionString))
 {
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine("Using connection string from appsettings");
 }
 
+// Validate we have a connection string
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException(
+        "No database connection string found. " +
+        "Please set DATABASE_URL, DATABASE_URL_INTERNAL, or configure DefaultConnection in appsettings.");
+}
 
-// --- Use Npgsql DbContext with the properly formatted connection string ---
+// Add DbContext - ONLY ONCE
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    options.UseNpgsql(connectionString);
+    // Enable sensitive data logging in development
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSensitiveDataLogging();
+        options.EnableDetailedErrors();
+    }
+});
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<IT15.Services.PayrollService>();
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/keys/"))
-    .SetApplicationName("IT15");
 
+// Configure Data Protection
+if (IsRunningOnRender())
+{
+    // On Render, use a persistent directory
+    var keysDirectory = new DirectoryInfo("/opt/render/project/.keys");
+    if (!keysDirectory.Exists)
+    {
+        keysDirectory.Create();
+    }
+
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(keysDirectory)
+        .SetApplicationName("IT15");
+
+    Console.WriteLine($"Data Protection keys directory: {keysDirectory.FullName}");
+}
+else
+{
+    // Local development - use default
+    builder.Services.AddDataProtection()
+        .SetApplicationName("IT15");
+}
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
@@ -61,7 +120,7 @@ builder.Configuration
 
 builder.Logging.AddConsole();
 
-// 1. Register your custom EmailSender service
+// Register services
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<ISmsSender, SmsSender>();
 builder.Services.AddHttpClient<HolidayApiService>();
@@ -91,33 +150,64 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Test database connection and apply migrations
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        dbContext.Database.Migrate();
+
+        // Test connection
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        if (canConnect)
+        {
+            logger.LogInformation("Successfully connected to database");
+            Console.WriteLine(" Database connection successful!");
+
+            // Apply migrations
+            logger.LogInformation("Applying database migrations...");
+            await dbContext.Database.MigrateAsync();
+            logger.LogInformation("Database migrations completed");
+            Console.WriteLine(" Migrations applied successfully!");
+        }
+        else
+        {
+            logger.LogError("Cannot connect to database");
+            Console.WriteLine(" Failed to connect to database!");
+        }
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
+        logger.LogError(ex, "Database initialization failed");
+        Console.WriteLine($" Database error: {ex.Message}");
+
+        // In production, we might want to fail fast
+        if (app.Environment.IsProduction() && IsRunningOnRender())
+        {
+            throw; // This will cause the deployment to fail, which is what we want
+        }
     }
 }
 
+// Seed data
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
     try
     {
         var configuration = services.GetRequiredService<IConfiguration>();
         await SeedData.Initialize(services, configuration);
+        logger.LogInformation("Database seeding completed");
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        logger.LogError(ex, "An error occurred while seeding the database");
+        // Don't fail the app for seeding errors
     }
 }
 
@@ -148,5 +238,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapRazorPages();
+
+Console.WriteLine($"Application starting in {app.Environment.EnvironmentName} mode");
 
 app.Run();
