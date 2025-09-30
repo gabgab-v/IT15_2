@@ -17,19 +17,15 @@ string? connectionString = null;
 
 // Check for DATABASE_URL (Render's PostgreSQL URL format)
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-var databaseUrlInternal = Environment.GetEnvironmentVariable("DATABASE_URL_INTERNAL");
 
-// Prefer internal URL when available (better performance on Render)
-var urlToUse = !string.IsNullOrEmpty(databaseUrlInternal) ? databaseUrlInternal : databaseUrl;
-
-if (!string.IsNullOrEmpty(urlToUse))
+if (!string.IsNullOrEmpty(databaseUrl))
 {
     try
     {
-        var databaseUri = new Uri(urlToUse);
+        var databaseUri = new Uri(databaseUrl);
         var userInfo = databaseUri.UserInfo.Split(':');
 
-        // Check if it's internal connection (no dots in hostname)
+        // Check if it's internal connection (no dots in hostname for internal URLs)
         bool isInternal = !databaseUri.Host.Contains(".");
 
         var npgsqlConnStr = new NpgsqlConnectionStringBuilder
@@ -45,9 +41,6 @@ if (!string.IsNullOrEmpty(urlToUse))
         };
 
         connectionString = npgsqlConnStr.ConnectionString;
-
-        // Log which connection type we're using
-        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<Program>>();
         Console.WriteLine($"Using {(isInternal ? "INTERNAL" : "EXTERNAL")} database connection");
         Console.WriteLine($"Host: {databaseUri.Host}");
     }
@@ -69,10 +62,10 @@ if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException(
         "No database connection string found. " +
-        "Please set DATABASE_URL, DATABASE_URL_INTERNAL, or configure DefaultConnection in appsettings.");
+        "Please set DATABASE_URL or configure DefaultConnection in appsettings.");
 }
 
-// Add DbContext - ONLY ONCE
+// Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
@@ -109,6 +102,7 @@ else
     builder.Services.AddDataProtection()
         .SetApplicationName("IT15");
 }
+
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddRoles<IdentityRole>()
@@ -211,6 +205,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
