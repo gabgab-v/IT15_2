@@ -30,6 +30,7 @@ namespace IT15.Data
         public DbSet<DeliveryService> DeliveryServices { get; set; }
 
         public DbSet<ResignationRequest> ResignationRequests { get; set; }
+        public DbSet<JobApplication> JobApplications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

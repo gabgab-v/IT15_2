@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Application Received";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="max-w-2xl mx-auto text-center py-16">
+    <div class="bg-white p-10 rounded-lg shadow-md border border-gray-200">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-6">
+            <i data-lucide="check-circle" class="h-8 w-8 text-green-600"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800">Thank You!</h1>
+        <p class="text-gray-600 mt-2">Your application has been successfully submitted. Our HR team will review your details and get back to you shortly.</p>
+        <div class="mt-8">
+            <a asp-controller="Home" asp-action="Index" class="bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700">
+                &larr; Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Ensure the icon is rendered
+        document.addEventListener('DOMContentLoaded', function () {
+            lucide.createIcons();
+        });
+    </script>
+}

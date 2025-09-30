@@ -1,0 +1,54 @@
+﻿@model IT15.Models.JobApplication
+
+@{
+    ViewData["Title"] = "Apply for Position";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mx-auto max-w-2xl py-12">
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Apply for a Position</h1>
+            <p class="mt-2 text-gray-600">Submit your application to join the OpenBook team.</p>
+        </div>
+
+        <form asp-action="Index" method="post" class="mt-8 space-y-6">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
+
+            <div>
+                <label asp-for="Username" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+                <span asp-validation-for="Username" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <label asp-for="Email" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="Email" type="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+                <span asp-validation-for="Email" class="text-red-500 text-xs"></span>
+            </div>
+
+            <!-- The new, improved phone number input -->
+            <div>
+                <label asp-for="PhoneNumber" class="block text-sm font-medium text-gray-700"></label>
+                <div class="mt-1 flex rounded-md shadow-sm">
+                    <select asp-for="CountryCode" class="block w-24 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-700 sm:text-sm">
+                        <option value="+63">PH +63</option>
+                        <option value="+1">USA +1</option>
+                        <option value="+44">UK +44</option>
+                        <option value="+61">AUS +61</option>
+                    </select>
+                    <input asp-for="PhoneNumber" type="text" class="flex-1 block w-full min-w-0 rounded-none rounded-r-md px-3 py-2 border border-gray-300" placeholder="e.g., 9171234567" required />
+                </div>
+                <span asp-validation-for="PhoneNumber" class="text-red-500 text-xs"></span>
+            </div>
+
+            <div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Submit Application
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+

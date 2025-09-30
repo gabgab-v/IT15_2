@@ -15,5 +15,11 @@ namespace IT15.ViewModels
         public DateTime? EndDate { get; set; }
         public string SelectedEmployeeId { get; set; }
         public string FilterType { get; set; }
+
+        public decimal TotalRevenueForPeriod { get; set; }
+        public List<string> SalesOverTimeLabels { get; set; } = new List<string>();
+        public List<decimal> SalesOverTimeData { get; set; } = new List<decimal>();
+        public List<string> SalesByEmployeeLabels { get; set; } = new List<string>();
+        public List<decimal> SalesByEmployeeData { get; set; } = new List<decimal>();
     }
 }

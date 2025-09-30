@@ -17,6 +17,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using IT15.Services;
+using IT15.Data; // Required for ApplicationDbContext
+using IT15.Models; // Required for ApplicationStatus
+using Microsoft.EntityFrameworkCore; // Required for .FirstOrDefaultAsync()
 
 namespace IT15.Areas.Identity.Pages.Account
 {
@@ -29,6 +32,7 @@ namespace IT15.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly IAuditService _auditService;
+        private readonly ApplicationDbContext _context;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
@@ -36,7 +40,8 @@ namespace IT15.Areas.Identity.Pages.Account
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            IAuditService auditService)
+            IAuditService auditService,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -45,6 +50,8 @@ namespace IT15.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
             _auditService = auditService;
+            _context = context;
+
         }
 
         [BindProperty]
@@ -95,6 +102,15 @@ namespace IT15.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            var approvedApplication = await _context.JobApplications
+                .FirstOrDefaultAsync(a => a.Email == Input.Email && a.Username == Input.Username && a.Status == ApplicationStatus.Approved);
+
+            if (approvedApplication == null)
+            {
+                ModelState.AddModelError(string.Empty, "Your application has not been approved yet, or the details do not match an approved application.");
+            }
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
@@ -140,7 +156,7 @@ namespace IT15.Areas.Identity.Pages.Account
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
-                    await _auditService.LogAsync("N/A", Input.Username, "User Registration Failure", $"Failed registration attempt for '{Input.Username}'. Reason: {error.Description}");
+                    await _auditService.LogAsync(null, Input.Username, "User Registration Failure", $"Failed registration attempt for '{Input.Username}'. Reason: {error.Description}");
                 }
             }
             return Page();

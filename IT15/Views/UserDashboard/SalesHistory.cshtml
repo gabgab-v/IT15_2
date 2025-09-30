@@ -6,10 +6,12 @@
     var culture = new System.Globalization.CultureInfo("en-PH");
 }
 
-<div class="border-b border-gray-200 pb-4 mb-6">
-    <a asp-action="Sales" class="text-blue-600 hover:underline text-sm mb-2 inline-block">&larr; Back to Record Sales</a>
+<div class="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
     <h2 class="text-2xl font-bold text-gray-900">Sales History & Reports</h2>
-    <p class="text-gray-500 mt-1">Filter and review all recorded sales transactions.</p>
+    <a asp-action="Sales"
+       class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+        &larr; Back to Record Sales
+    </a>
 </div>
 
 <!-- Filter Form -->
@@ -41,6 +43,29 @@
             <a asp-action="SalesHistory" asp-route-filterType="monthly" asp-route-employeeId="@Model.SelectedEmployeeId" class="px-3 py-1 text-sm rounded-full @(Model.FilterType == "monthly" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300")">This Month</a>
         </div>
     </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Total Revenue Card -->
+    <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 class="text-sm font-medium text-gray-500">Total Revenue for Period</h3>
+        <p class="text-3xl font-bold text-green-600 mt-2">@Model.TotalRevenueForPeriod.ToString("C", culture)</p>
+    </div>
+    <!-- Sales by Employee Chart -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Sales by Employee</h3>
+        <div class="h-64">
+            <canvas id="salesByEmployeeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Over Time Chart -->
+<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Revenue Over Time</h3>
+    <div class="h-80">
+        <canvas id="salesOverTimeChart"></canvas>
+    </div>
 </div>
 
 <!-- Sales History Table -->
@@ -94,6 +119,10 @@
 </div>
 
 @section Scripts {
+    <!--FIX: Added Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Dependencies for PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -118,7 +147,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Print Logic (Uses the CSS method)
+            // Print Logic
             document.getElementById('print-report-button').addEventListener('click', function () {
                 const reportContent = document.getElementById('sales-report-content');
                 if (reportContent) {
@@ -140,13 +169,13 @@
                     const exportContainer = document.createElement('div');
                     exportContainer.className = 'p-8 max-w-4xl';
                     exportContainer.innerHTML = `
-                                <div class="text-center border-b pb-4 mb-6">
-                                    <h1 class="text-2xl font-bold text-gray-800">OpenBook HRIS</h1>
-                                    <p class="text-gray-500">${reportTitle}</p>
-                                    <p class="text-sm text-gray-500 mt-1">Date Range: ${filterStartDate} - ${filterEndDate}</p>
-                                </div>
-                                ${contentToExport.innerHTML}
-                            `;
+                                        <div class="text-center border-b pb-4 mb-6">
+                                            <h1 class="text-2xl font-bold text-gray-800">OpenBook HRIS</h1>
+                                            <p class="text-gray-500">${reportTitle}</p>
+                                            <p class="text-sm text-gray-500 mt-1">Date Range: ${filterStartDate} - ${filterEndDate}</p>
+                                        </div>
+                                        ${contentToExport.innerHTML}
+                                    `;
 
                     // Add it to the body off-screen to be rendered
                     exportContainer.style.position = 'absolute';
@@ -171,7 +200,54 @@
                     });
                 }
             });
+
+            // --- Sales Over Time Line Chart ---
+            const salesOverTimeCtx = document.getElementById('salesOverTimeChart');
+            if (salesOverTimeCtx) {
+                const salesOverTimeLabels = @Html.Raw(Json.Serialize(Model.SalesOverTimeLabels));
+                const salesOverTimeData = @Html.Raw(Json.Serialize(Model.SalesOverTimeData));
+
+                // Add a check for data existence to avoid errors
+                if (salesOverTimeLabels && salesOverTimeData) {
+                    new Chart(salesOverTimeCtx, {
+                        type: 'line',
+                        data: {
+                            labels: salesOverTimeLabels,
+                            datasets: [{
+                                label: 'Revenue',
+                                data: salesOverTimeData,
+                                borderColor: '#3b82f6',
+                                tension: 0.1,
+                                fill: false
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                }
+            }
+
+            // --- Sales by Employee Doughnut Chart ---
+            const salesByEmployeeCtx = document.getElementById('salesByEmployeeChart');
+            if (salesByEmployeeCtx) {
+                const salesByEmployeeLabels = @Html.Raw(Json.Serialize(Model.SalesByEmployeeLabels));
+                const salesByEmployeeData = @Html.Raw(Json.Serialize(Model.SalesByEmployeeData));
+
+                // Add a check for data existence to avoid errors
+                if (salesByEmployeeLabels && salesByEmployeeData && salesByEmployeeData.some(d => d > 0)) {
+                    new Chart(salesByEmployeeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: salesByEmployeeLabels,
+                            datasets: [{
+                                data: salesByEmployeeData,
+                                backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#6366f1'],
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                    });
+                }
+            }
         });
     </script>
 }
-

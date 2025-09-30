@@ -22,9 +22,11 @@
 <div>
     <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-800">Products</h3>
-        <a asp-action="SalesHistory" class="text-sm font-medium text-blue-600 hover:text-blue-800">
+        <a asp-action="SalesHistory"
+           class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
             View Full Report &rarr;
         </a>
+
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         @foreach (var item in Model.Products)

@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,6 +32,11 @@
 
                 <a class="font-medium text-gray-600 hover:text-blue-600 transition-colors" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
 
+                @if (!SignInManager.IsSignedIn(User))
+                {
+                    <a class="font-medium text-gray-600 hover:text-blue-600 transition-colors" asp-area="" asp-controller="Apply" asp-action="Index">Apply Now</a>
+                }
+
                 <div class="relative" id="panels-dropdown">
                     <button id="panels-button" class="flex items-center font-medium text-gray-600 hover:text-blue-600 transition-colors">
                         <span>Panels</span>
@@ -36,15 +45,15 @@
                     <div id="panels-menu" class="absolute right-0 mt-3 w-56 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-2 z-20 hidden">
                         <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i data-lucide="shield-check" class="w-4 h-4 text-gray-500"></i>
-                            Admin Panel
+                            Admin 
                         </a>
                         <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i data-lucide="users" class="w-4 h-4 text-gray-500"></i>
-                            HR Panel
+                            HR 
                         </a>
                         <a asp-area="Accounting" asp-controller="Dashboard" asp-action="Index" class="flex items-center gap-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i data-lucide="landmark" class="w-4 h-4 text-gray-500"></i>
-                            Accounting Panel
+                            Accounting
                         </a>
                     </div>
                 </div>

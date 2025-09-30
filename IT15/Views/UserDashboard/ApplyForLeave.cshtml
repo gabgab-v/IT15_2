@@ -1,43 +1,55 @@
-﻿@model IT15.Models.LeaveRequest
+﻿@model IT15.ViewModels.UserDashboardViewModel
 
 @{
     ViewData["Title"] = "Apply for Leave";
 }
 
-<h2 class="text-2xl font-semibold text-gray-800 mb-6">New Leave Request</h2>
+<div class="border-b border-gray-200 pb-6 mb-6">
+    <div class="flex justify-between items-start">
+        <!-- Left side: title + description -->
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">New Leave Request</h2>
+            <p class="text-gray-500 mt-1">Check your balance and submit a new request.</p>
+        </div>
+
+        <!-- Right side: back button + balance -->
+        <div class="text-right">
+            <a asp-action="LeaveRequests"
+               class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700">
+                &larr; Back to My Requests
+            </a>
+            <div class="mt-3">
+                <label asp-for="AvailableLeaveDays" class="text-sm font-medium text-gray-500"></label>
+                <p class="text-2xl font-bold text-green-600">@Model.AvailableLeaveDays</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-2xl">
-    <form asp-action="ApplyForLeave" method="post">
+    <form asp-action="ApplyForLeave" method="post" class="space-y-6">
         @Html.AntiForgeryToken()
-
-        <!--
-            THIS IS THE KEY CHANGE:
-            "All" will display all validation errors, including those for specific fields,
-            making it much easier to debug why the form isn't submitting.
-        -->
         <div asp-validation-summary="All" class="text-red-600 mb-4 bg-red-50 p-3 rounded-md"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <label asp-for="StartDate" class="block text-sm font-medium text-gray-700"></label>
-                <input asp-for="StartDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                <span asp-validation-for="StartDate" class="text-red-600 text-sm"></span>
+                <label asp-for="LeaveRequest.StartDate" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="LeaveRequest.StartDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                <span asp-validation-for="LeaveRequest.StartDate" class="text-red-600 text-sm"></span>
             </div>
             <div>
-                <label asp-for="EndDate" class="block text-sm font-medium text-gray-700"></label>
-                <input asp-for="EndDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
-                <span asp-validation-for="EndDate" class="text-red-600 text-sm"></span>
+                <label asp-for="LeaveRequest.EndDate" class="block text-sm font-medium text-gray-700"></label>
+                <input asp-for="LeaveRequest.EndDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                <span asp-validation-for="LeaveRequest.EndDate" class="text-red-600 text-sm"></span>
             </div>
         </div>
-
-        <div class="mt-6">
-            <label asp-for="Reason" class="block text-sm font-medium text-gray-700"></label>
-            <textarea asp-for="Reason" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-            <span asp-validation-for="Reason" class="text-red-600 text-sm"></span>
+        <div>
+            <label asp-for="LeaveRequest.Reason" class="block text-sm font-medium text-gray-700"></label>
+            <textarea asp-for="LeaveRequest.Reason" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+            <span asp-validation-for="LeaveRequest.Reason" class="text-red-600 text-sm"></span>
         </div>
-
         <div class="mt-8">
-            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button type="submit" class="w-full bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700">
                 Submit Request
             </button>
         </div>

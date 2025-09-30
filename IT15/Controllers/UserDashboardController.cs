@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -303,13 +304,13 @@ namespace IT15.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApplyForLeave(UserDashboardViewModel model)
+        // THE FIX: Change the parameter to bind specifically to the "LeaveRequest" form data.
+        public async Task<IActionResult> ApplyForLeave([Bind(Prefix = "LeaveRequest")] LeaveRequest leaveRequest)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
             int availableDays = userProfile?.LeaveBalance ?? 0;
 
-            var leaveRequest = model.LeaveRequest;
             var requestedDays = (leaveRequest.EndDate - leaveRequest.StartDate).Days + 1;
 
             if (requestedDays <= 0)
@@ -332,8 +333,12 @@ namespace IT15.Controllers
                 return RedirectToAction(nameof(LeaveRequests));
             }
 
-            // If we get here, something failed. Repopulate the available days and return the view.
-            model.AvailableLeaveDays = availableDays;
+            // If validation fails, we rebuild the full ViewModel to redisplay the page correctly.
+            var model = new UserDashboardViewModel
+            {
+                LeaveRequest = leaveRequest,
+                AvailableLeaveDays = availableDays
+            };
             return View(model);
         }
 
@@ -373,9 +378,10 @@ namespace IT15.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // THE CHANGE: The 'transactionMonth' parameter is no longer needed.
         public async Task<IActionResult> RecordSale(string productName, decimal price, int quantity)
         {
+            // Find the supply item in your local database to get its cost and stock level.
+            // The 'Cost' property was populated by your SeedData process.
             var supplyItem = await _context.Supplies.FirstOrDefaultAsync(s => s.Name == productName);
 
             if (supplyItem == null || supplyItem.StockLevel < quantity)
@@ -384,23 +390,39 @@ namespace IT15.Controllers
                 return RedirectToAction("Sales");
             }
 
+            // --- MODIFICATION START ---
+
+            // 1. Calculate the total base cost for the items sold.
+            //    This uses the 'Cost' property from your Supply entity.
+            var baseCost = supplyItem.Cost * quantity;
+
+            // 2. Keep your existing revenue calculation exactly as it was.
             var salesPolicy = _configuration.GetSection("SalesPolicy");
             var revenueMargin = decimal.Parse(salesPolicy["RevenueMarginPercent"]) / 100m;
             var totalSaleAmount = price * quantity;
             var revenueAmount = totalSaleAmount * revenueMargin;
 
+            // 3. Combine the base cost and the calculated revenue for the final ledger amount.
+            var finalTransactionAmount = baseCost + revenueAmount;
+
+            // --- MODIFICATION END ---
+
+            // Update stock level as before
             supplyItem.StockLevel -= quantity;
+
+            // Create the ledger entry with the new combined amount
             var saleTransaction = new CompanyLedger
             {
                 UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                // THE FIX: Use the current date and time for the transaction.
                 TransactionDate = DateTime.Now,
                 Description = $"{quantity} x Sale of {productName}",
-                Amount = revenueAmount
+                Amount = finalTransactionAmount // Use the new combined amount here
             };
 
             _context.CompanyLedger.Add(saleTransaction);
             await _context.SaveChangesAsync();
+
+            // Log the audit and redirect as before
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.Identity.Name;
             await _auditService.LogAsync(userId, userName, "Sale Recorded", $"User '{userName}' recorded a sale of {quantity} x {productName}.");
@@ -413,9 +435,6 @@ namespace IT15.Controllers
         public async Task<IActionResult> SalesHistory(string filterType, DateTime? startDate, DateTime? endDate, string employeeId)
         {
             var today = DateTime.Today;
-            var startOfMonth = new DateTime(today.Year, today.Month, 1);
-
-            // Apply quick filters if selected
             if (filterType == "daily")
             {
                 startDate = today;
@@ -423,11 +442,11 @@ namespace IT15.Controllers
             }
             else if (filterType == "monthly")
             {
-                startDate = startOfMonth;
-                endDate = startOfMonth.AddMonths(1).AddDays(-1);
+                startDate = new DateTime(today.Year, today.Month, 1);
+                endDate = startDate.Value.AddMonths(1).AddDays(-1);
             }
 
-            IQueryable<CompanyLedger> salesQuery = _context.CompanyLedger.Include(s => s.User);
+            IQueryable<CompanyLedger> salesQuery = _context.CompanyLedger.Include(s => s.User).Where(s => s.Amount > 0);
 
             if (startDate.HasValue)
             {
@@ -442,16 +461,20 @@ namespace IT15.Controllers
                 salesQuery = salesQuery.Where(s => s.UserId == employeeId);
             }
 
-            var salesRecords = await salesQuery
-                .OrderByDescending(s => s.TransactionDate)
-                .ThenByDescending(s => s.Id)
-                .ToListAsync();
+            var salesRecords = await salesQuery.OrderByDescending(s => s.TransactionDate).ToListAsync();
 
-            var employees = await _userManager.Users.Select(u => new SelectListItem
-            {
-                Value = u.Id,
-                Text = u.UserName
-            }).ToListAsync();
+            // --- NEW: Data Aggregation for Charts ---
+            var salesOverTime = salesRecords
+                .GroupBy(s => s.TransactionDate.Date)
+                .Select(g => new { Date = g.Key, Total = g.Sum(s => s.Amount) })
+                .OrderBy(x => x.Date);
+
+            var salesByEmployee = salesRecords
+                .GroupBy(s => s.User?.UserName ?? "N/A")
+                .Select(g => new { Employee = g.Key, Total = g.Sum(s => s.Amount) })
+                .OrderByDescending(x => x.Total);
+
+            var employees = await _userManager.Users.Select(u => new SelectListItem { Value = u.Id, Text = u.UserName }).ToListAsync();
 
             var model = new SalesHistoryViewModel
             {
@@ -460,7 +483,12 @@ namespace IT15.Controllers
                 StartDate = startDate,
                 EndDate = endDate,
                 SelectedEmployeeId = employeeId,
-                FilterType = filterType // Pass the active filter to the view
+                FilterType = filterType,
+                TotalRevenueForPeriod = salesRecords.Sum(s => s.Amount),
+                SalesOverTimeLabels = salesOverTime.Select(x => x.Date.ToString("MMM dd")).ToList(),
+                SalesOverTimeData = salesOverTime.Select(x => x.Total).ToList(),
+                SalesByEmployeeLabels = salesByEmployee.Select(x => x.Employee).ToList(),
+                SalesByEmployeeData = salesByEmployee.Select(x => x.Total).ToList()
             };
 
             return View(model);
@@ -469,20 +497,20 @@ namespace IT15.Controllers
         [HttpGet]
         public async Task<IActionResult> SupplyCatalog()
         {
-            var model = new SupplyCatalogViewModel
-            {
-                // 1. Fetch the products from the API.
-                Products = await _incomeApiService.GetProductsAsync(),
-
-                // 2. Fetch the delivery services from the local database.
-                DeliveryServices = await _context.DeliveryServices.Select(d => new SelectListItem
+            // THE FIX: We now explicitly format the currency using the correct culture.
+            var culture = new CultureInfo("en-PH");
+            var deliveryServices = await _context.DeliveryServices
+                .Select(d => new SelectListItem
                 {
                     Value = d.Id.ToString(),
-                    Text = $"{d.Name} - {d.Fee:C}"
-                }).ToListAsync()
-            };
+                    Text = $"{d.Name} - {d.Fee.ToString("C", culture)}"
+                }).ToListAsync();
 
-            // 3. Pass the complete ViewModel to the view.
+            var model = new SupplyCatalogViewModel
+            {
+                Products = await _incomeApiService.GetProductsAsync(),
+                DeliveryServices = deliveryServices
+            };
             return View(model);
         }
 
