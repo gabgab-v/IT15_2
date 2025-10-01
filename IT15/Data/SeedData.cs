@@ -81,7 +81,7 @@ namespace IT15.Data // Make sure this namespace matches your project
 
                 using (var httpClient = new HttpClient())
                 {
-                    httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+                    httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
                     try
                     {
                         var productsFromApi = await httpClient.GetFromJsonAsync<List<StoreProduct>>("https://fakestoreapi.com/products");
