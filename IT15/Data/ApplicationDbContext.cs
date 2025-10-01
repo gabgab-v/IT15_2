@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace IT15.Data
 {
@@ -48,12 +49,19 @@ namespace IT15.Data
                 .HasForeignKey(o => o.ApprovedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<OvertimeRequest>()
-                .Property(o => o.OvertimeDate)
-                .HasColumnType("timestamptz")
-                .HasConversion(
-                 v => v, // store as-is, must be UTC
-                 v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetColumnType("timestamptz");
+                        property.SetValueConverter(new ValueConverter<DateTime, DateTime>(
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)));
+                    }
+                }
+            }
 
 
 
