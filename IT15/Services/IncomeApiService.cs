@@ -49,7 +49,7 @@ namespace IT15.Services
                 var products = await _httpClient.GetFromJsonAsync<List<StoreProduct>>("products");
                 return products ?? new List<StoreProduct>();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Failed to fetch products from Fake Store API.");
                 return new List<StoreProduct>();
