@@ -91,7 +91,28 @@ namespace IT15.Areas.HumanResource.Controllers
 
             return RedirectToAction("Index");
         }
-        // ... (Deny action would be similar, just updating the status)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Deny(int id)
+        {
+            var application = await _context.JobApplications.FindAsync(id);
+            if (application != null && application.Status == ApplicationStatus.Pending)
+            {
+                application.Status = ApplicationStatus.Denied;
+                await _context.SaveChangesAsync();
+
+                var currentUser = await _userManager.GetUserAsync(User);
+                await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Job Application Denied", $"Denied application for '{application.Username}'.");
+
+                TempData["SuccessMessage"] = $"Application for {application.Username} has been denied.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Could not find or action this application. It may have already been processed.";
+            }
+            return RedirectToAction("Index");
+        }
     }
 }
 
