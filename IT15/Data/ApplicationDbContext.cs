@@ -48,6 +48,15 @@ namespace IT15.Data
                 .HasForeignKey(o => o.ApprovedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Entity<OvertimeRequest>()
+                .Property(o => o.OvertimeDate)
+                .HasColumnType("timestamptz")
+                .HasConversion(
+                 v => v, // store as-is, must be UTC
+                 v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+
+
             // Additional PostgreSQL-specific configurations for your custom entities
             ConfigureCustomEntities(builder);
         }
