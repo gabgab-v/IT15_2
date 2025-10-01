@@ -34,20 +34,14 @@ namespace IT15.Data // Make sure this namespace matches your project
             // --- The rest of your admin user creation logic remains the same ---
             var adminEmail = configuration["AppSettings:AdminUser:Email"];
             var adminPassword = configuration["AppSettings:AdminUser:Password"];
-
-            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
             {
-                var newAdminUser = new IdentityUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    EmailConfirmed = true
-                };
-
-                var createAdminResult = await userManager.CreateAsync(newAdminUser, adminPassword);
+                adminUser = new IdentityUser { UserName = adminEmail, Email = adminEmail, EmailConfirmed = true };
+                var createAdminResult = await userManager.CreateAsync(adminUser, adminPassword);
                 if (createAdminResult.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(newAdminUser, "Admin");
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
                 }
             }
 
@@ -61,43 +55,52 @@ namespace IT15.Data // Make sure this namespace matches your project
                 await context.SaveChangesAsync();
             }
 
-            if (!await context.Supplier.AnyAsync())
+            if (!await context.CompanyLedger.AnyAsync(c => c.Description == "Initial Capital"))
             {
-                var supplier = new Supplier { Name = "API General Supplier" };
-                context.Supplier.Add(supplier);
-                await context.SaveChangesAsync(); // Save to get the supplier ID
+                context.CompanyLedger.Add(new CompanyLedger
+                {
+                    UserId = adminUser.Id, // Attribute initial funds to the Admin user
+                    TransactionDate = DateTime.UtcNow,
+                    Description = "Initial Capital",
+                    Amount = 500000.00m
+                });
+                await context.SaveChangesAsync();
+            }
 
-                // THE CHANGE: Fetch product data directly from the API
+            // --- Seed Suppliers and Supplies ---
+            if (!await context.Supplies.AnyAsync())
+            {
+                // Pick an existing supplier (or create one if none exists)
+                var supplier = await context.Supplier.FirstOrDefaultAsync();
+                if (supplier == null)
+                {
+                    supplier = new Supplier { Name = "API General Supplier" };
+                    context.Supplier.Add(supplier);
+                    await context.SaveChangesAsync();
+                }
+
                 using (var httpClient = new HttpClient())
                 {
+                    httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
                     try
                     {
                         var productsFromApi = await httpClient.GetFromJsonAsync<List<StoreProduct>>("https://fakestoreapi.com/products");
-
                         if (productsFromApi != null)
                         {
                             foreach (var product in productsFromApi)
                             {
-                                // Use the API data to create the local supply record
-                                context.Supplies.Add(new Supply
-                                {
-                                    Name = product.Title,
-                                    SupplierId = supplier.Id,
-                                    StockLevel = 0,
-                                    Cost = product.Price // Use the dynamic price from the API
-                                });
+                                context.Supplies.Add(new Supply { Name = product.Title, SupplierId = supplier.Id, StockLevel = 0, Cost = product.Price });
                             }
                             await context.SaveChangesAsync();
                         }
                     }
-                    catch (HttpRequestException ex)
+                    catch (Exception ex)
                     {
-                        // In a real app, you would log this error.
-                        // This demonstrates the reliability issue with calling APIs at startup.
-                        Console.WriteLine($"Could not fetch products from API during seeding: {ex.Message}");
+                        Console.WriteLine($"Could not seed supplies from API: {ex.Message}");
                     }
                 }
             }
+
 
             var testUser = await userManager.FindByEmailAsync("gabs3@gmail.com");
 
