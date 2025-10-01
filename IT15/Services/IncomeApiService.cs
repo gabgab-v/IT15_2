@@ -10,50 +10,51 @@ namespace IT15.Services
     public class IncomeApiService
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<IncomeApiService> _logger; 
+        private readonly ILogger<IncomeApiService> _logger;
+        private const string ApiUrl = "https://fakestoreapi.com/products";
 
         public IncomeApiService(HttpClient httpClient, ILogger<IncomeApiService> logger)
         {
             _httpClient = httpClient;
             _logger = logger;
+
+            // Add headers if not already set (some APIs reject "bare" clients)
+            if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+                _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+
+            if (!_httpClient.DefaultRequestHeaders.Contains("Accept"))
+                _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
         }
 
-        // This method fetches all "sales" from the API and calculates the total income.
         public async Task<decimal> GetTotalIncomeAsync()
         {
-            try
-            {
-                // Call the Fake Store API's products endpoint.
-                var products = await _httpClient.GetFromJsonAsync<List<StoreProduct>>("products");
-
-                if (products != null)
-                {
-                    // For our simulation, we'll assume the total income is the sum of all product prices.
-                    return products.Sum(p => p.Price);
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                // If the API fails, we'll assume zero income to be safe.
-                // In a real app, you would log this error.
-                _logger.LogError(ex, "No income, error");
-            }
-
-            return 0;
+            var products = await GetProductsAsync();
+            return products.Sum(p => p.Price);
         }
 
         public async Task<List<StoreProduct>> GetProductsAsync()
         {
-            try
+            int retries = 3;
+            for (int i = 0; i < retries; i++)
             {
-                var products = await _httpClient.GetFromJsonAsync<List<StoreProduct>>("products");
-                return products ?? new List<StoreProduct>();
+                try
+                {
+                    _logger.LogInformation("Fetching products from Fake Store API (attempt {Attempt})", i + 1);
+
+                    var products = await _httpClient.GetFromJsonAsync<List<StoreProduct>>(ApiUrl);
+
+                    if (products != null)
+                        return products;
+                }
+                catch (HttpRequestException ex)
+                {
+                    _logger.LogWarning(ex, "Attempt {Attempt} failed to fetch products.", i + 1);
+                    await Task.Delay(2000 * (i + 1)); // backoff: 2s, 4s, 6s
+                }
             }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "Failed to fetch products from Fake Store API.");
-                return new List<StoreProduct>();
-            }
+
+            _logger.LogError("All retries failed. Returning empty product list.");
+            return new List<StoreProduct>();
         }
     }
 }
