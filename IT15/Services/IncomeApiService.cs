@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
 namespace IT15.Services
@@ -9,10 +10,12 @@ namespace IT15.Services
     public class IncomeApiService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<IncomeApiService> _logger; 
 
-        public IncomeApiService(HttpClient httpClient)
+        public IncomeApiService(HttpClient httpClient, ILogger<IncomeApiService> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         // This method fetches all "sales" from the API and calculates the total income.
@@ -33,6 +36,7 @@ namespace IT15.Services
             {
                 // If the API fails, we'll assume zero income to be safe.
                 // In a real app, you would log this error.
+                _logger.LogError(ex, "No income, error");
             }
 
             return 0;
@@ -47,6 +51,7 @@ namespace IT15.Services
             }
             catch (HttpRequestException)
             {
+                _logger.LogError(ex, "Failed to fetch products from Fake Store API.");
                 return new List<StoreProduct>();
             }
         }
