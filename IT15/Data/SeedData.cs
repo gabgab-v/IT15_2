@@ -102,14 +102,14 @@ namespace IT15.Data // Make sure this namespace matches your project
             }
 
 
-            var testUser = await userManager.FindByEmailAsync("gabs3@gmail.com");
+            var testUser = await userManager.FindByEmailAsync("rosesarerosie915@gmail.com");
 
             if (testUser != null)
             {
                 // --- MODIFIABLE PARAMETERS FOR TESTING ---
                 // Change these values to populate data for a different month or year.
                 int yearToSeed = 2025;
-                int monthToSeed = 8; // 8 = August
+                int monthToSeed = 1; // 8 = August
                 // -----------------------------------------
 
                 var random = new Random();

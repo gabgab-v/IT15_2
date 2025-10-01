@@ -86,6 +86,11 @@ namespace IT15.Services
                 // --- Final Payroll Calculation ---
                 decimal sss = 500, philhealth = 300, pagibig = 100;
                 decimal grossPay = Math.Max(0, (basicSalary - absentDeductions) + totalOvertimePay);
+
+
+                // Flat tax: 10% of gross pay
+                decimal tax = grossPay * 0.10m;
+
                 decimal totalDeductions = sss + philhealth + pagibig + absentDeductions + totalOvertimePenalty;
                 decimal netPay = Math.Max(0, grossPay - totalDeductions);
 
@@ -100,7 +105,7 @@ namespace IT15.Services
                     SSSDeduction = sss,
                     PhilHealthDeduction = philhealth,
                     PagIBIGDeduction = pagibig,
-                    TaxDeduction = 0,
+                    TaxDeduction = tax,
                     GrossPay = grossPay,
                     TotalDeductions = totalDeductions,
                     NetPay = netPay
