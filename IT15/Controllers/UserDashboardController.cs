@@ -737,8 +737,6 @@ namespace IT15.Controllers
 
                 if (supply != null && delivery != null)
                 {
-                    supply.StockLevel += quantity;
-
                     var request = new SupplyRequest
                     {
                         SupplyId = supply.Id,
@@ -747,33 +745,14 @@ namespace IT15.Controllers
                         TotalCost = (supply.Cost * quantity) + delivery.Fee,
                         RequestingEmployeeId = currentUser.Id,
                         DateRequested = DateTime.UtcNow,
-                        Status = SupplyRequestStatus.Approved
+                        Status = SupplyRequestStatus.Pending
                     };
+
                     _context.SupplyRequests.Add(request);
-
-                    var deliveryExpense = new CompanyLedger
-                    {
-                        UserId = currentUser.Id,
-                        TransactionDate = DateTime.UtcNow,
-                        Description = $"Delivery Fee: {delivery.Name} from {supply.Supplier.Name} for {supply.Name}",
-                        Amount = -delivery.Fee
-                    };
-                    _context.CompanyLedger.Add(deliveryExpense);
-
-                    var supplyCost = supply.Cost * quantity;
-                    var supplyExpense = new CompanyLedger
-                    {
-                        UserId = currentUser.Id,
-                        TransactionDate = DateTime.UtcNow,
-                        Description = $"Supply Cost: {quantity} x {supply.Name}",
-                        Amount = -supplyCost
-                    };
-                    _context.CompanyLedger.Add(supplyExpense);
-
                     await _context.SaveChangesAsync();
 
-                    await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Supply Request Submitted", $"User '{currentUser.UserName}' auto-approved a request for {quantity} of '{supply.Name}'.");
-                    TempData["SuccessMessage"] = "Supply request approved. Stock and company funds have been updated.";
+                    await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Supply Request Submitted", $"User '{currentUser.UserName}' submitted a supply request for {quantity} of '{supply.Name}' that is pending admin approval.");
+                    TempData["SuccessMessage"] = "Supply request submitted for admin approval.";
                 }
                 else
                 {

@@ -66,6 +66,10 @@
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                     Manage Employees
                 </a>
+                <a asp-area="Admin" asp-controller="SupplyRequest" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(currentController == "SupplyRequest" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
+                    <i data-lucide="package" class="w-5 h-5 mr-3"></i>
+                    Supply Requests
+                </a>
 
                 <!-- THE CHANGE: Added the new link to the Audit Log page -->
                 <a asp-area="Admin" asp-controller="AuditLog" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(currentController == "AuditLog" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
