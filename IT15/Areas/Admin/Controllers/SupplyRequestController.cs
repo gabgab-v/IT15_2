@@ -96,6 +96,10 @@ namespace IT15.Areas.Admin.Controllers
                     UserId = request.RequestingEmployeeId,
                     TransactionDate = DateTime.UtcNow,
                     Description = $"Supply Cost: {request.Quantity} x {request.Supply.Name}",
+                    EntryType = LedgerEntryType.Expense,
+                    Category = LedgerEntryCategory.Supplies,
+                    ReferenceNumber = $"PO-{request.Id:D6}",
+                    Counterparty = request.Supply.Supplier?.Name ?? "Unknown supplier",
                     Amount = -supplyCost
                 });
             }
@@ -108,6 +112,10 @@ namespace IT15.Areas.Admin.Controllers
                     UserId = request.RequestingEmployeeId,
                     TransactionDate = DateTime.UtcNow,
                     Description = $"Delivery Fee: {deliveryService.Name} from {supplierName} for {request.Supply.Name}",
+                    EntryType = LedgerEntryType.Expense,
+                    Category = LedgerEntryCategory.Operations,
+                    ReferenceNumber = $"DF-{request.Id:D6}",
+                    Counterparty = deliveryService.Name,
                     Amount = -deliveryFee
                 });
             }

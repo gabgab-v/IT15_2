@@ -1,15 +1,16 @@
-﻿@model IT15.ViewModels.Accounting.FinancialReportViewModel
+@using IT15.Models
+@model IT15.ViewModels.Accounting.FinancialReportViewModel
 
 @{
     ViewData["Title"] = "Monthly Financial Report";
     var culture = new System.Globalization.CultureInfo("en-PH");
+    string Currency(decimal value) => value.ToString("C", culture);
 }
 
-<h2 class="text-2xl font-bold text-gray-900 mb-4">Monthly Financial Report</h2>
+<h1 class="text-3xl font-bold text-gray-900 mb-6">Monthly Financial Report</h1>
 
-<!-- Filter Form -->
 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-    <form asp-action="Index" method="get" class="flex items-end gap-4">
+    <form asp-action="Index" method="get" class="flex flex-wrap items-end gap-4">
         <div>
             <label for="reportMonth" class="text-sm font-medium text-gray-700">Select Month</label>
             <input type="month" name="reportMonth" value="@Model.ReportMonth.ToString("yyyy-MM")" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
@@ -18,12 +19,13 @@
     </form>
 </div>
 
-<!-- Report Display Container -->
-<div id="financial-report-content">
+<div id="financial-report-content" class="space-y-8">
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Summary for @Model.ReportMonth.ToString("MMMM yyyy")</h3>
-            <!-- THE CHANGE: Added Print and PDF buttons -->
+        <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-800">Summary for @Model.ReportMonth.ToString("MMMM yyyy")</h2>
+                <p class="text-sm text-gray-500 mt-1">Income and expenses grouped by category.</p>
+            </div>
             <div class="flex items-center space-x-2">
                 <button id="print-report-button" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
                     <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print
@@ -33,51 +35,109 @@
                 </button>
             </div>
         </div>
-        <div class="space-y-3 text-lg">
-            <div class="flex justify-between">
-                <span class="font-medium text-green-600">Total Revenue:</span>
-                <span class="font-bold text-green-600">@Model.TotalRevenue.ToString("C", culture)</span>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3 text-lg">
+                <div class="flex justify-between">
+                    <span class="font-medium text-green-600">Total Revenue</span>
+                    <span class="font-bold text-green-600">@Currency(Model.TotalRevenue)</span>
+                </div>
+                <div class="flex justify-between pl-4">
+                    <span class="font-medium text-red-600">Payroll Expense</span>
+                    <span class="font-bold text-red-600">@Currency(Model.TotalPayrollExpense)</span>
+                </div>
+                <div class="flex justify-between pl-4">
+                    <span class="font-medium text-red-600">Supply Requests</span>
+                    <span class="font-bold text-red-600">@Currency(Model.TotalSupplyExpense)</span>
+                </div>
+                <div class="flex justify-between pl-4">
+                    <span class="font-medium text-red-600">Delivery Fees</span>
+                    <span class="font-bold text-red-600">@Currency(Model.TotalDeliveryFeeExpense)</span>
+                </div>
+                <div class="flex justify-between pl-4">
+                    <span class="font-medium text-red-600">Other Operational Costs</span>
+                    <span class="font-bold text-red-600">@Currency(Model.TotalOperationalExpense)</span>
+                </div>
             </div>
-            <div class="flex justify-between pl-4">
-                <span class="font-medium text-red-600">Payroll Expense:</span>
-                <span class="font-bold text-red-600">@Model.TotalPayrollExpense.ToString("C", culture)</span>
-            </div>
-            <div class="flex justify-between pl-4">
-                <span class="font-medium text-red-600">Delivery Fees:</span>
-                <span class="font-bold text-red-600">@Model.TotalDeliveryFeeExpense.ToString("C", culture)</span>
-            </div>
-            <div class="flex justify-between pl-4">
-                <span class="font-medium text-red-600">Other Operational Costs:</span>
-                <span class="font-bold text-red-600">@Model.TotalOperationalExpense.ToString("C", culture)</span>
-            </div>
-            <div class="flex justify-between font-bold text-xl border-t-2 pt-3 mt-3 @(Model.NetIncome >= 0 ? "text-gray-900" : "text-red-700")">
-                <span>Net Income / Loss:</span>
-                <span>@Model.NetIncome.ToString("C", culture)</span>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 text-lg">
+                <div class="flex justify-between font-semibold">
+                    <span class="text-gray-700">Total Expenses</span>
+                    <span class="text-gray-900">@Currency(Model.TotalExpenses)</span>
+                </div>
+                <div class="flex justify-between mt-3 pt-3 border-t border-slate-200 text-xl font-bold @(Model.NetIncome >= 0 ? "text-blue-700" : "text-red-700")">
+                    <span>Net Income / Loss</span>
+                    <span>@Currency(Model.NetIncome)</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Detailed Transaction Logs -->
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Revenue Log -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Accounts Receivable Snapshot</h3>
+            <dl class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Outstanding</dt>
+                    <dd class="text-lg font-semibold text-gray-900">@Currency(Model.ReceivablesSummary.TotalOutstanding)</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Collected</dt>
+                    <dd class="text-lg font-semibold text-green-600">@Currency(Model.ReceivablesSummary.TotalCollected)</dd>
+                </div>
+                <div>
+                    <dt class="text-amber-600 uppercase tracking-wide">Overdue</dt>
+                    <dd class="text-lg font-semibold text-amber-600">@Currency(Model.ReceivablesSummary.OverdueOutstanding)</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Open Invoices</dt>
+                    <dd class="text-lg font-semibold text-gray-900">@Model.ReceivablesSummary.TotalInvoices</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Accounts Payable Snapshot</h3>
+            <dl class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Outstanding</dt>
+                    <dd class="text-lg font-semibold text-gray-900">@Currency(Model.PayablesSummary.TotalOutstanding)</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Paid</dt>
+                    <dd class="text-lg font-semibold text-green-600">@Currency(Model.PayablesSummary.TotalPaid)</dd>
+                </div>
+                <div>
+                    <dt class="text-red-600 uppercase tracking-wide">Overdue</dt>
+                    <dd class="text-lg font-semibold text-red-600">@Currency(Model.PayablesSummary.OverdueOutstanding)</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500 uppercase tracking-wide">Open Bills</dt>
+                    <dd class="text-lg font-semibold text-gray-900">@Model.PayablesSummary.TotalBills</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Revenue Log</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Date</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Description</th>
+                            <th class="px-4 py-2 text-right font-semibold text-gray-600">Amount</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach (var transaction in Model.Transactions.Where(t => t.Amount > 0))
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach (var transaction in Model.Transactions.Where(t => t.EntryType == LedgerEntryType.Income))
                         {
-                            <tr>
-                                <td class="px-4 py-2 text-sm text-gray-500">@transaction.TransactionDate.ToString("MMM dd")</td>
-                                <td class="px-4 py-2 text-sm text-gray-900">@transaction.Description</td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-green-600">@transaction.Amount.ToString("C", culture)</td>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-gray-500">@transaction.TransactionDate.ToString("MMM dd")</td>
+                                <td class="px-4 py-2 text-gray-800">@transaction.Description</td>
+                                <td class="px-4 py-2 text-right font-medium text-green-600">@Currency(transaction.Amount)</td>
                             </tr>
                         }
                     </tbody>
@@ -85,36 +145,108 @@
             </div>
         </div>
 
-        <!-- Expenses Log -->
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Expenses Log</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Date</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Description</th>
+                            <th class="px-4 py-2 text-right font-semibold text-gray-600">Amount</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach (var transaction in Model.Transactions.Where(t => t.Amount < 0))
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach (var transaction in Model.Transactions.Where(t => t.EntryType == LedgerEntryType.Expense))
                         {
-                            <tr>
-                                <td class="px-4 py-2 text-sm text-gray-500">@transaction.TransactionDate.ToString("MMM dd")</td>
-                                <td class="px-4 py-2 text-sm text-gray-900">@transaction.Description</td>
-                                <td class="px-4 py-2 text-sm text-right font-medium text-red-600">@transaction.Amount.ToString("C", culture)</td>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-2 text-gray-500">@transaction.TransactionDate.ToString("MMM dd")</td>
+                                <td class="px-4 py-2 text-gray-800">@transaction.Description</td>
+                                <td class="px-4 py-2 text-right font-medium text-red-600">@Currency(System.Math.Abs(transaction.Amount))</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Revenue T-Test (High vs Low Months)</h3>
+            <span class="text-sm text-gray-500">Last 12 months of sales income</span>
+        </div>
+
+        @if (!Model.RevenueAnalysis.HasEnoughData)
+        {
+            <p class="text-sm text-gray-500">Not enough historical sales data to evaluate variability. Record more sales to populate this table.</p>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600">High Months</th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600">Total</th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600">Low Months</th>
+                                <th class="px-4 py-2 text-left font-semibold text-gray-600">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @for (var i = 0; i < System.Math.Max(Model.RevenueAnalysis.HighMonths.Count, Model.RevenueAnalysis.LowMonths.Count); i++)
+                            {
+                                var high = i < Model.RevenueAnalysis.HighMonths.Count ? Model.RevenueAnalysis.HighMonths[i] : null;
+                                var low = i < Model.RevenueAnalysis.LowMonths.Count ? Model.RevenueAnalysis.LowMonths[i] : null;
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-2 text-gray-700">@((high?.Month.ToString("MMM yyyy")) ?? "-")</td>
+                                    <td class="px-4 py-2 text-gray-900 font-medium">@((high != null) ? Currency(high.Total) : "-")</td>
+                                    <td class="px-4 py-2 text-gray-700">@((low?.Month.ToString("MMM yyyy")) ?? "-")</td>
+                                    <td class="px-4 py-2 text-gray-900 font-medium">@((low != null) ? Currency(low.Total) : "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">High Mean</span>
+                        <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.HighMean.ToString("C2", culture)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Low Mean</span>
+                        <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.LowMean.ToString("C2", culture)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">t-statistic</span>
+                        <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.WelchTStatistic.ToString("F2")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Degrees of Freedom</span>
+                        <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.DegreesOfFreedom.ToString("F1")</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">p-value</span>
+                        <span class="font-semibold text-gray-900">
+                            @if (double.IsNaN(Model.RevenueAnalysis.PValue))
+                            {
+                                <span>n/a</span>
+                            }
+                            else
+                            {
+                                @Model.RevenueAnalysis.PValue.ToString("0.000")
+                            }
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500">A p-value below 0.05 indicates the revenue difference between the two groups is statistically significant.</p>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -139,8 +271,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Print Logic (Uses the CSS method)
-            document.getElementById('print-report-button').addEventListener('click', function () {
+            document.getElementById('print-report-button')?.addEventListener('click', function () {
                 const reportContent = document.getElementById('financial-report-content');
                 if (reportContent) {
                     reportContent.classList.add('print-area');
@@ -149,8 +280,7 @@
                 }
             });
 
-            // PDF Export Logic
-            document.getElementById('export-pdf-button').addEventListener('click', function () {
+            document.getElementById('export-pdf-button')?.addEventListener('click', function () {
                 const contentToExport = document.getElementById('financial-report-content');
                 const reportMonth = "@Model.ReportMonth.ToString("MMMM yyyy")";
 
@@ -165,7 +295,6 @@
                         const imgProps = pdf.getImageProperties(imgData);
                         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-                        // Add a header to the PDF
                         pdf.setFontSize(18);
                         pdf.text('OpenBook HRIS Financial Report', margin, margin);
                         pdf.setFontSize(12);
@@ -179,4 +308,3 @@
         });
     </script>
 }
-

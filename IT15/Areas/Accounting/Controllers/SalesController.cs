@@ -52,6 +52,10 @@ namespace IT15.Areas.Accounting.Controllers
                     UserId = currentUser.Id,
                     TransactionDate = new DateTime(transactionMonth.Year, transactionMonth.Month, 1),
                     Description = $"Sale of {productName}",
+                    EntryType = LedgerEntryType.Income,
+                    Category = LedgerEntryCategory.Sales,
+                    ReferenceNumber = $"SL-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()}",
+                    Counterparty = currentUser.UserName ?? "Internal",
                     Amount = price
                 };
                 _context.CompanyLedger.Add(saleTransaction);

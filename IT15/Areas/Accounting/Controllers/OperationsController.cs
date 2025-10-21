@@ -31,7 +31,7 @@ namespace IT15.Areas.Accounting.Controllers
             // Fetch only operational costs (negative, not payroll or sales)
             var operationalCosts = await _context.CompanyLedger
                 .Include(c => c.User)
-                .Where(c => c.Amount < 0 && c.Description.StartsWith("Operational Cost"))
+                .Where(c => c.EntryType == LedgerEntryType.Expense && c.Category == LedgerEntryCategory.Operations)
                 .OrderByDescending(c => c.TransactionDate)
                 .ToListAsync();
 
@@ -53,6 +53,10 @@ namespace IT15.Areas.Accounting.Controllers
                     UserId = currentUserId,
                     TransactionDate = new DateTime(transactionMonth.Year, transactionMonth.Month, 1),
                     Description = $"Operational Cost: {costType}",
+                    EntryType = LedgerEntryType.Expense,
+                    Category = costType == OperationalCostType.OfficeSupplies ? LedgerEntryCategory.Supplies : LedgerEntryCategory.Operations,
+                    ReferenceNumber = $"OP-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()}",
+                    Counterparty = currentUserName ?? "Internal",
                     Amount = -amount // Costs are recorded as a negative amount
                 };
                 _context.CompanyLedger.Add(costTransaction);

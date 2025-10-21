@@ -99,6 +99,10 @@ namespace IT15.Areas.Accounting.Controllers
                 UserId = currentUser.Id,
                 TransactionDate = DateTime.UtcNow,
                 Description = $"Payroll expense for {payroll.PayrollMonth:MMMM yyyy}",
+                EntryType = LedgerEntryType.Expense,
+                Category = LedgerEntryCategory.Payroll,
+                ReferenceNumber = $"PY-{payroll.PayrollMonth:yyyyMM}-{Guid.NewGuid().ToString("N").Substring(0, 4).ToUpperInvariant()}",
+                Counterparty = "Payroll",
                 Amount = -totalPayrollCost
             });
 

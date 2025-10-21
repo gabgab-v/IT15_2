@@ -85,6 +85,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 // --- Other services ---
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<PayrollService>();
+builder.Services.AddScoped<FinancialAnalyticsService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<ISmsSender, SmsSender>();
 builder.Services.AddHttpClient<HolidayApiService>();

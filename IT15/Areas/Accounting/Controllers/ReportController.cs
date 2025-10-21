@@ -1,4 +1,6 @@
-﻿using IT15.Data;
+using IT15.Data;
+using IT15.Models;
+using IT15.Services;
 using IT15.ViewModels.Accounting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +16,12 @@ namespace IT15.Areas.Accounting.Controllers
     public class ReportController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly FinancialAnalyticsService _analyticsService;
 
-        public ReportController(ApplicationDbContext context)
+        public ReportController(ApplicationDbContext context, FinancialAnalyticsService analyticsService)
         {
             _context = context;
+            _analyticsService = analyticsService;
         }
 
         // GET: /Accounting/Report
@@ -27,26 +31,54 @@ namespace IT15.Areas.Accounting.Controllers
             var startOfMonth = new DateTime(monthToQuery.Year, monthToQuery.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1);
 
-            // Fetch all transactions for the selected month, with user details
             var transactions = await _context.CompanyLedger
                 .Include(t => t.User)
                 .Where(t => t.TransactionDate >= startOfMonth && t.TransactionDate < endOfMonth)
                 .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
 
-            // Calculate the detailed financial summary by categorizing each transaction
+            var totalRevenue = transactions
+                .Where(t => t.EntryType == LedgerEntryType.Income)
+                .Sum(t => t.Amount);
+
+            var payrollExpense = transactions
+                .Where(t => t.EntryType == LedgerEntryType.Expense && t.Category == LedgerEntryCategory.Payroll)
+                .Sum(t => -t.Amount);
+
+            var supplyExpense = transactions
+                .Where(t => t.EntryType == LedgerEntryType.Expense && t.Category == LedgerEntryCategory.Supplies)
+                .Sum(t => -t.Amount);
+
+            var operationalEntries = transactions
+                .Where(t => t.EntryType == LedgerEntryType.Expense && t.Category == LedgerEntryCategory.Operations)
+                .ToList();
+
+            var deliveryExpense = operationalEntries
+                .Where(t => t.Description.Contains("Delivery", StringComparison.OrdinalIgnoreCase))
+                .Sum(t => -t.Amount);
+
+            var otherOperationalExpense = operationalEntries.Sum(t => -t.Amount) - deliveryExpense;
+            if (otherOperationalExpense < 0) otherOperationalExpense = 0;
+
+            var receivablesSummary = await _analyticsService.GetReceivablesSummaryAsync(DateTime.UtcNow);
+            var payablesSummary = await _analyticsService.GetPayablesSummaryAsync(DateTime.UtcNow);
+            var revenueAnalysis = await _analyticsService.GetRevenueAnalysisAsync(12);
+
             var viewModel = new FinancialReportViewModel
             {
                 ReportMonth = startOfMonth,
-                TotalRevenue = transactions.Where(t => t.Amount > 0).Sum(t => t.Amount),
-                TotalPayrollExpense = transactions.Where(t => t.Description.StartsWith("Payroll expense")).Sum(t => t.Amount),
-                TotalDeliveryFeeExpense = transactions.Where(t => t.Description.StartsWith("Delivery Fee")).Sum(t => t.Amount),
-                TotalOperationalExpense = transactions.Where(t => t.Description.StartsWith("Operational Cost")).Sum(t => t.Amount),
-                Transactions = transactions // Pass the full list for the detailed log
+                TotalRevenue = totalRevenue,
+                TotalPayrollExpense = payrollExpense,
+                TotalSupplyExpense = supplyExpense,
+                TotalDeliveryFeeExpense = deliveryExpense,
+                TotalOperationalExpense = otherOperationalExpense,
+                Transactions = transactions,
+                ReceivablesSummary = receivablesSummary,
+                PayablesSummary = payablesSummary,
+                RevenueAnalysis = revenueAnalysis
             };
 
             return View(viewModel);
         }
     }
 }
-

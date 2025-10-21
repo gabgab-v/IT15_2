@@ -1,16 +1,30 @@
-﻿@model IT15.ViewModels.Accounting.AccountingDashboardViewModel
+@model IT15.ViewModels.Accounting.AccountingDashboardViewModel
 
 @{
     ViewData["Title"] = "Accounting Dashboard";
+    var culture = new System.Globalization.CultureInfo("en-PH");
+    string Currency(decimal value) => value.ToString("C", culture);
 }
 
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-800">Accounting Dashboard</h1>
-    <p class="text-gray-600 mt-1">Summary of financial tasks and approvals.</p>
+    <p class="text-gray-600 mt-1">Real-time view of company cash flow, payables, and receivables.</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Payrolls to Approve Card -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center">
+            <div class="bg-blue-100 p-3 rounded-full">
+                <i data-lucide="piggy-bank" class="w-6 h-6 text-blue-600"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Current Cash Balance</p>
+                <p class="text-2xl font-bold text-gray-900">@Currency(Model.AvailableFunds)</p>
+            </div>
+        </div>
+        <p class="text-gray-400 mt-4 text-sm">Net of all ledger entries to date.</p>
+    </div>
+
     <div class="bg-white p-6 rounded-lg shadow-sm border border-yellow-300">
         <div class="flex items-center">
             <div class="bg-yellow-100 p-3 rounded-full">
@@ -24,21 +38,19 @@
         <a asp-area="Accounting" asp-controller="Accounting" asp-action="Index" class="text-blue-600 hover:underline mt-4 inline-block font-medium text-sm">Review Payrolls &rarr;</a>
     </div>
 
-    <!-- Total Pending Value Card -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-red-300">
         <div class="flex items-center">
             <div class="bg-red-100 p-3 rounded-full">
                 <i data-lucide="wallet" class="w-6 h-6 text-red-600"></i>
             </div>
             <div class="ml-4">
-                <p class="text-sm font-medium text-gray-500">Total Pending Value</p>
-                <p class="text-2xl font-bold text-gray-900">@Model.TotalPendingPayrollValue.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
+                <p class="text-sm font-medium text-gray-500">Total Pending Payroll</p>
+                <p class="text-2xl font-bold text-gray-900">@Currency(Model.TotalPendingPayrollValue)</p>
             </div>
         </div>
-        <p class="text-gray-400 mt-4 text-sm">Sum of all net pay to be released.</p>
+        <p class="text-gray-400 mt-4 text-sm">Sum of all net pay awaiting release.</p>
     </div>
 
-    <!-- Approved This Month Card -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-green-300">
         <div class="flex items-center">
             <div class="bg-green-100 p-3 rounded-full">
@@ -49,8 +61,188 @@
                 <p class="text-2xl font-bold text-gray-900">@Model.PayrollsApprovedThisMonth</p>
             </div>
         </div>
-        <p class="text-gray-400 mt-4 text-sm">Based on date of budget approval.</p>
+        <p class="text-gray-400 mt-4 text-sm">Approvals logged during @DateTime.UtcNow.ToString("MMMM").</p>
+    </div>
+</div>
+
+<div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Daily Cash Flow</h2>
+            <span class="text-sm text-gray-500">@DateTime.UtcNow.ToString("MMMM dd, yyyy")</span>
+        </div>
+        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div class="p-4 bg-green-50 rounded border border-green-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Income</dt>
+                <dd class="text-lg font-bold text-green-700">@Currency(Model.FinancialSnapshot.DailyIncome)</dd>
+            </div>
+            <div class="p-4 bg-red-50 rounded border border-red-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Expenses</dt>
+                <dd class="text-lg font-bold text-red-700">@Currency(Model.FinancialSnapshot.DailyExpenses)</dd>
+            </div>
+            <div class="p-4 bg-blue-50 rounded border border-blue-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Net</dt>
+                <dd class="text-lg font-bold text-blue-700">@Currency(Model.FinancialSnapshot.DailyNetIncome)</dd>
+            </div>
+        </dl>
+        <p class="text-xs text-gray-400 mt-3">Daily values update automatically with each ledger entry.</p>
     </div>
 
-    
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Month-to-Date</h2>
+            <span class="text-sm text-gray-500">@DateTime.UtcNow.ToString("MMMM yyyy")</span>
+        </div>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div class="p-4 bg-green-50 rounded border border-green-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Sales Income</dt>
+                <dd class="text-lg font-bold text-green-700">@Currency(Model.FinancialSnapshot.MonthlySalesIncome)</dd>
+            </div>
+            <div class="p-4 bg-red-50 rounded border border-red-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Payroll Expense</dt>
+                <dd class="text-lg font-bold text-red-700">@Currency(Model.FinancialSnapshot.MonthlyPayrollExpenses)</dd>
+            </div>
+            <div class="p-4 bg-red-50 rounded border border-red-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Supply Requests</dt>
+                <dd class="text-lg font-bold text-red-700">@Currency(Model.FinancialSnapshot.MonthlySupplyExpenses)</dd>
+            </div>
+            <div class="p-4 bg-red-50 rounded border border-red-100">
+                <dt class="text-gray-500 uppercase tracking-wide">Operational Costs</dt>
+                <dd class="text-lg font-bold text-red-700">@Currency(Model.FinancialSnapshot.MonthlyOperationalExpenses)</dd>
+            </div>
+            <div class="p-4 bg-blue-50 rounded border border-blue-100 sm:col-span-2">
+                <dt class="text-gray-500 uppercase tracking-wide">Net Income</dt>
+                <dd class="text-xl font-bold text-blue-700">@Currency(Model.FinancialSnapshot.MonthlyNetIncome)</dd>
+            </div>
+        </dl>
+        <p class="text-xs text-gray-400 mt-3">Supply requests include product replenishments approved this month.</p>
+    </div>
+</div>
+
+<div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Accounts Receivable</h2>
+            <a asp-area="Accounting" asp-controller="Receivables" asp-action="Index" class="text-sm text-blue-600 hover:underline">Manage &rarr;</a>
+        </div>
+        <dl class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Open Invoices</dt>
+                <dd class="text-lg font-bold text-gray-900">@Model.ReceivablesSummary.TotalInvoices</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Outstanding</dt>
+                <dd class="text-lg font-bold text-gray-900">@Currency(Model.ReceivablesSummary.TotalOutstanding)</dd>
+            </div>
+            <div>
+                <dt class="text-amber-600 uppercase tracking-wide">Overdue</dt>
+                <dd class="text-lg font-bold text-amber-600">@Currency(Model.ReceivablesSummary.OverdueOutstanding)</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Collected</dt>
+                <dd class="text-lg font-bold text-gray-900">@Currency(Model.ReceivablesSummary.TotalCollected)</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-800">Accounts Payable</h2>
+            <a asp-area="Accounting" asp-controller="Payables" asp-action="Index" class="text-sm text-blue-600 hover:underline">Manage &rarr;</a>
+        </div>
+        <dl class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Open Bills</dt>
+                <dd class="text-lg font-bold text-gray-900">@Model.PayablesSummary.TotalBills</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Outstanding</dt>
+                <dd class="text-lg font-bold text-gray-900">@Currency(Model.PayablesSummary.TotalOutstanding)</dd>
+            </div>
+            <div>
+                <dt class="text-red-600 uppercase tracking-wide">Overdue</dt>
+                <dd class="text-lg font-bold text-red-600">@Currency(Model.PayablesSummary.OverdueOutstanding)</dd>
+            </div>
+            <div>
+                <dt class="text-gray-500 uppercase tracking-wide">Paid</dt>
+                <dd class="text-lg font-bold text-gray-900">@Currency(Model.PayablesSummary.TotalPaid)</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+
+<div class="mt-10 bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-gray-800">Revenue T-Test</h2>
+        <span class="text-sm text-gray-500">Last 12 months of sales income</span>
+    </div>
+
+    @if (!Model.RevenueAnalysis.HasEnoughData)
+    {
+        <p class="text-sm text-gray-500">Not enough months of data to run a t-test. Record more sales to unlock this insight.</p>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">High Revenue Months</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Total</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Low Revenue Months</th>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @for (var i = 0; i < System.Math.Max(Model.RevenueAnalysis.HighMonths.Count, Model.RevenueAnalysis.LowMonths.Count); i++)
+                        {
+                            var high = i < Model.RevenueAnalysis.HighMonths.Count ? Model.RevenueAnalysis.HighMonths[i] : null;
+                            var low = i < Model.RevenueAnalysis.LowMonths.Count ? Model.RevenueAnalysis.LowMonths[i] : null;
+                            <tr>
+                                <td class="px-4 py-2 text-gray-700">@((high?.Month.ToString("MMM yyyy")) ?? "-")</td>
+                                <td class="px-4 py-2 text-gray-900 font-medium">@((high != null) ? Currency(high.Total) : "-")</td>
+                                <td class="px-4 py-2 text-gray-700">@((low?.Month.ToString("MMM yyyy")) ?? "-")</td>
+                                <td class="px-4 py-2 text-gray-900 font-medium">@((low != null) ? Currency(low.Total) : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">High Mean</span>
+                    <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.HighMean.ToString("C2", culture)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Low Mean</span>
+                    <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.LowMean.ToString("C2", culture)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">t-statistic</span>
+                    <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.WelchTStatistic.ToString("F2")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Degrees of Freedom</span>
+                    <span class="font-semibold text-gray-900">@Model.RevenueAnalysis.DegreesOfFreedom.ToString("F1")</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">p-value (two-tailed)</span>
+                    <span class="font-semibold text-gray-900">
+                        @if (double.IsNaN(Model.RevenueAnalysis.PValue))
+                        {
+                            <span>n/a</span>
+                        }
+                        else
+                        {
+                            @Model.RevenueAnalysis.PValue.ToString("0.000")
+                        }
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500">
+                    A p-value below 0.05 indicates the difference between bountiful and low months is statistically significant.
+                </p>
+            </div>
+        </div>
+    }
 </div>

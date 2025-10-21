@@ -19,6 +19,8 @@ namespace IT15.Data
         public DbSet<Payroll> Payrolls { get; set; }
         public DbSet<PaySlip> PaySlips { get; set; }
         public DbSet<CompanyLedger> CompanyLedger { get; set; }
+        public DbSet<AccountsReceivable> AccountsReceivables { get; set; }
+        public DbSet<AccountsPayable> AccountsPayables { get; set; }
         public DbSet<SupplyRequest> SupplyRequests { get; set; }
         public DbSet<Supply> Supplies { get; set; }
         public DbSet<Supplier> Supplier { get; set; }
@@ -170,8 +172,28 @@ namespace IT15.Data
 
             builder.Entity<CompanyLedger>(entity =>
             {
-                // Configure decimal properties if needed
-                // entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.EntryType).HasConversion<int>();
+                entity.Property(e => e.Category).HasConversion<int>();
+                entity.HasOne(e => e.AccountsReceivable)
+                    .WithMany(r => r.LedgerEntries)
+                    .HasForeignKey(e => e.AccountsReceivableId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.AccountsPayable)
+                    .WithMany(p => p.LedgerEntries)
+                    .HasForeignKey(e => e.AccountsPayableId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<AccountsReceivable>(entity =>
+            {
+                entity.Property(e => e.Status).HasConversion<int>();
+                entity.Property(e => e.RevenueCategory).HasConversion<int>();
+            });
+
+            builder.Entity<AccountsPayable>(entity =>
+            {
+                entity.Property(e => e.Status).HasConversion<int>();
+                entity.Property(e => e.ExpenseCategory).HasConversion<int>();
             });
 
             // Configure DateTime properties to use timestamp with time zone if needed

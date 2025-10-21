@@ -62,6 +62,10 @@ namespace IT15.Data // Make sure this namespace matches your project
                     UserId = adminUser.Id, // Attribute initial funds to the Admin user
                     TransactionDate = DateTime.UtcNow,
                     Description = "Initial Capital",
+                    EntryType = LedgerEntryType.Income,
+                    Category = LedgerEntryCategory.Other,
+                    ReferenceNumber = "CAP-INIT",
+                    Counterparty = "Shareholders",
                     Amount = 500000.00m
                 });
                 await context.SaveChangesAsync();

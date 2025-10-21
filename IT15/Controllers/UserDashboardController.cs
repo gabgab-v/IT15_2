@@ -68,7 +68,11 @@ namespace IT15.Controllers
                 var monthStart = new DateTime(month.Year, month.Month, 1);
                 var monthEnd = monthStart.AddMonths(1);
                 var monthlySales = await _context.CompanyLedger
-                    .Where(s => s.UserId == userId && s.Amount > 0 && s.TransactionDate >= monthStart && s.TransactionDate < monthEnd)
+                    .Where(s => s.UserId == userId
+                                && s.EntryType == LedgerEntryType.Income
+                                && s.Category == LedgerEntryCategory.Sales
+                                && s.TransactionDate >= monthStart
+                                && s.TransactionDate < monthEnd)
                     .SumAsync(s => s.Amount);
                 salesChartLabels.Add(monthStart.ToString("MMM yyyy"));
                 salesChartData.Add(monthlySales);
@@ -77,7 +81,13 @@ namespace IT15.Controllers
             var recentActivity = new List<ActivityLogItem>();
             var recentLogs = await _context.DailyLogs.Where(l => l.UserId == userId).OrderByDescending(l => l.CheckInTime).Take(3).ToListAsync();
             var recentLeaves = await _context.LeaveRequests.Where(l => l.RequestingEmployeeId == userId).OrderByDescending(l => l.DateRequested).Take(3).ToListAsync();
-            var recentSales = await _context.CompanyLedger.Where(s => s.UserId == userId && s.Amount > 0).OrderByDescending(s => s.TransactionDate).Take(3).ToListAsync();
+            var recentSales = await _context.CompanyLedger
+                .Where(s => s.UserId == userId
+                            && s.EntryType == LedgerEntryType.Income
+                            && s.Category == LedgerEntryCategory.Sales)
+                .OrderByDescending(s => s.TransactionDate)
+                .Take(3)
+                .ToListAsync();
             recentActivity.AddRange(recentLogs.Select(l => new ActivityLogItem { Timestamp = l.CheckInTime, Description = "Checked in for the day.", Icon = "log-in", Url = Url.Action("DailyLogs") }));
             recentActivity.AddRange(recentLeaves.Select(l => new ActivityLogItem { Timestamp = l.DateRequested, Description = $"Submitted a leave request ({l.Status}).", Icon = "calendar-check", Url = Url.Action("LeaveRequests") }));
             recentActivity.AddRange(recentSales.Select(s => new ActivityLogItem { Timestamp = s.TransactionDate, Description = $"Recorded a sale of {s.Amount:C}.", Icon = "trending-up", Url = Url.Action("SalesHistory") }));
@@ -622,11 +632,16 @@ namespace IT15.Controllers
             supplyItem.StockLevel -= quantity;
 
             // Create the ledger entry with the new combined amount
+            var reference = $"SL-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant()}";
             var saleTransaction = new CompanyLedger
             {
                 UserId = User.FindFirstValue(ClaimTypes.NameIdentifier),
                 TransactionDate = DateTime.UtcNow,
                 Description = $"{quantity} x Sale of {productName}",
+                EntryType = LedgerEntryType.Income,
+                Category = LedgerEntryCategory.Sales,
+                ReferenceNumber = reference,
+                Counterparty = User.Identity?.Name ?? "Internal",
                 Amount = finalTransactionAmount // Use the new combined amount here
             };
 
@@ -657,7 +672,9 @@ namespace IT15.Controllers
                 endDate = startDate.Value.AddMonths(1).AddDays(-1);
             }
 
-            IQueryable<CompanyLedger> salesQuery = _context.CompanyLedger.Include(s => s.User).Where(s => s.Amount > 0);
+            IQueryable<CompanyLedger> salesQuery = _context.CompanyLedger
+                .Include(s => s.User)
+                .Where(s => s.EntryType == LedgerEntryType.Income && s.Category == LedgerEntryCategory.Sales);
 
             if (startDate.HasValue)
             {

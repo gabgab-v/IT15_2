@@ -1,0 +1,119 @@
+@model IT15.ViewModels.Accounting.ReceivablesIndexViewModel
+
+@{
+    ViewData["Title"] = "Accounts Receivable";
+    var culture = new System.Globalization.CultureInfo("en-PH");
+    string Currency(decimal value) => value.ToString("C", culture);
+}
+
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-800">Accounts Receivable</h1>
+        <p class="text-gray-600 mt-1">Track invoices and incoming cash collections.</p>
+    </div>
+    <a asp-action="Create" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Receivable
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Outstanding Balance</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">@Currency(Model.Summary.TotalOutstanding)</p>
+    </div>
+    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Collected to Date</p>
+        <p class="text-2xl font-bold text-green-600 mt-1">@Currency(Model.Summary.TotalCollected)</p>
+    </div>
+    <div class="bg-white p-5 rounded-lg shadow-sm border border-amber-200">
+        <p class="text-xs uppercase tracking-wide text-amber-500">Overdue</p>
+        <p class="text-2xl font-bold text-amber-600 mt-1">@Currency(Model.Summary.OverdueOutstanding)</p>
+        <p class="text-xs text-amber-600 mt-1">@Model.Summary.OverdueCount invoice(s)</p>
+    </div>
+    <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+        <p class="text-xs uppercase tracking-wide text-gray-500">Invoice Count</p>
+        <p class="text-2xl font-bold text-gray-900 mt-1">@Model.Summary.TotalInvoices</p>
+    </div>
+</div>
+
+<div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-800">Invoice Register</h2>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left font-semibold text-gray-600">Reference</th>
+                    <th class="px-4 py-2 text-left font-semibold text-gray-600">Customer</th>
+                    <th class="px-4 py-2 text-left font-semibold text-gray-600">Invoice Date</th>
+                    <th class="px-4 py-2 text-left font-semibold text-gray-600">Due Date</th>
+                    <th class="px-4 py-2 text-right font-semibold text-gray-600">Amount</th>
+                    <th class="px-4 py-2 text-right font-semibold text-gray-600">Collected</th>
+                    <th class="px-4 py-2 text-right font-semibold text-gray-600">Outstanding</th>
+                    <th class="px-4 py-2 text-left font-semibold text-gray-600">Status</th>
+                    <th class="px-4 py-2 text-right font-semibold text-gray-600">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (!Model.Items.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="px-4 py-6 text-center text-gray-500">No receivables recorded yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model.Items)
+                    {
+                        var isOverdue = item.DueDate.HasValue && item.DueDate.Value.Date < DateTime.UtcNow.Date && item.OutstandingAmount > 0;
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-semibold text-gray-900">@item.ReferenceNumber</td>
+                            <td class="px-4 py-3 text-gray-700">@item.CustomerName</td>
+                            <td class="px-4 py-3 text-gray-600">@item.InvoiceDate.ToString("MMM dd, yyyy")</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if (item.DueDate.HasValue)
+                                {
+                                    <span class="@(isOverdue ? "text-red-600 font-semibold" : "")">@item.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-gray-400">n/a</span>
+                                }
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-900">@Currency(item.InvoiceAmount)</td>
+                            <td class="px-4 py-3 text-right text-green-600 font-medium">@Currency(item.CollectedAmount)</td>
+                            <td class="px-4 py-3 text-right @(item.OutstandingAmount > 0 ? "text-red-600 font-semibold" : "text-gray-600")">@Currency(item.OutstandingAmount)</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                                    @(item.Status switch
+                                    {
+                                        IT15.Models.ReceivableStatus.Collected => "bg-green-100 text-green-700",
+                                        IT15.Models.ReceivableStatus.PartiallyCollected => "bg-amber-100 text-amber-700",
+                                        IT15.Models.ReceivableStatus.Overdue => "bg-red-100 text-red-700",
+                                        IT15.Models.ReceivableStatus.WrittenOff => "bg-gray-200 text-gray-600",
+                                        _ => "bg-slate-100 text-slate-600"
+                                    })">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right space-x-2">
+                                <a asp-action="RecordPayment" asp-route-id="@item.Id" class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded">Collect</a>
+                                @if (item.OutstandingAmount > 0)
+                                {
+                                    <form asp-action="WriteOff" asp-route-id="@item.Id" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="inline-flex items-center px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded" onclick="return confirm('Write off this receivable?');">
+                                            Write Off
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
