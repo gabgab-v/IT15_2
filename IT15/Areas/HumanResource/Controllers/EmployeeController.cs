@@ -65,6 +65,8 @@ namespace IT15.Areas.HumanResource.Controllers
             decimal totalOvertimePay = 0;
             decimal totalOvertimePenalty = 0;
             decimal totalApprovedOvertimeHours = 0;
+            decimal totalActualOvertimeHours = 0;
+            decimal totalPenaltyHours = 0;
 
             var approvedRequests = await _context.OvertimeRequests
                 .Where(r => r.RequestingEmployeeId == id && r.Status == OvertimeStatus.Approved && r.OvertimeDate >= startOfMonth && r.OvertimeDate < endOfMonth)
@@ -80,13 +82,15 @@ namespace IT15.Areas.HumanResource.Controllers
                     var approvedEndTime = request.OvertimeDate.Date + request.EndTime;
                     if (dailyLog.CheckOutTime.Value < approvedEndTime)
                     {
-                        var unworkedHours = (decimal)(approvedEndTime - dailyLog.CheckOutTime.Value).TotalHours;
+                        var unworkedHours = Math.Max(0m, (decimal)(approvedEndTime - dailyLog.CheckOutTime.Value).TotalHours);
+                        totalPenaltyHours += unworkedHours;
                         totalOvertimePenalty += unworkedHours * hourlyRate;
                     }
                     var overtimeStart = request.OvertimeDate.Date.AddHours(18);
                     if (dailyLog.CheckOutTime.Value > overtimeStart)
                     {
-                        var actualOvertimeHours = (decimal)(dailyLog.CheckOutTime.Value - overtimeStart).TotalHours;
+                        var actualOvertimeHours = Math.Max(0m, (decimal)(dailyLog.CheckOutTime.Value - overtimeStart).TotalHours);
+                        totalActualOvertimeHours += actualOvertimeHours;
                         totalOvertimePay += actualOvertimeHours * hourlyRate * 1.25m;
                     }
                 }
@@ -94,7 +98,8 @@ namespace IT15.Areas.HumanResource.Controllers
 
             decimal sss = 500, philhealth = 300, pagibig = 100;
             decimal grossPay = Math.Max(0, (basicSalary - absentDeductions) + totalOvertimePay);
-            decimal totalDeductions = sss + philhealth + pagibig + absentDeductions + totalOvertimePenalty;
+            decimal tax = grossPay * 0.10m;
+            decimal totalDeductions = sss + philhealth + pagibig + tax + absentDeductions + totalOvertimePenalty;
             decimal netPay = Math.Max(0, grossPay - totalDeductions);
 
             var viewModel = new EmployeePayrollViewModel
@@ -103,14 +108,20 @@ namespace IT15.Areas.HumanResource.Controllers
                 DaysPresent = daysPresent,
                 DaysAbsent = daysAbsent,
                 ApprovedOvertimeHours = totalApprovedOvertimeHours,
+                ActualOvertimeHours = totalActualOvertimeHours,
+                OvertimePenaltyHours = totalPenaltyHours,
+                WorkingDaysInMonth = daysInMonth,
                 BasicSalary = basicSalary,
                 OvertimePay = totalOvertimePay,
                 OvertimePenalty = totalOvertimePenalty,
+                DailyRate = dailyRate,
+                HourlyRate = hourlyRate,
                 GrossPay = grossPay,
                 AbsentDeductions = absentDeductions,
                 SssDeduction = sss,
                 PhilHealthDeduction = philhealth,
                 PagIbigDeduction = pagibig,
+                TaxDeduction = tax,
                 TotalDeductions = totalDeductions,
                 NetPay = netPay
             };

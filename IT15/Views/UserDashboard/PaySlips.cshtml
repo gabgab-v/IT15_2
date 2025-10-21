@@ -12,6 +12,10 @@
     {
         @foreach (var slip in Model)
         {
+            var daysPresent = Math.Max(0, slip.WorkingDaysInMonth - slip.DaysAbsent);
+            var basePayEarned = Math.Max(0m, slip.BasicSalary - slip.AbsentDeductions);
+            var totalAdditions = slip.OvertimePay;
+            var statutoryDeductions = slip.SSSDeduction + slip.PhilHealthDeduction + slip.PagIBIGDeduction + slip.TaxDeduction;
             <div id="payslip-container-@slip.Id" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <!-- Payslip Header -->
                 <div class="flex justify-between items-center pb-4 border-b border-gray-200">
@@ -35,24 +39,50 @@
                 <!-- Printable Payslip Details -->
                 <div id="payslip-@slip.Id" class="printable-content">
                     <!-- THE FIX: Added the detailed payslip content here -->
+                    <div class="mt-6 space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Salary Basis</h4>
+                        <div class="flex justify-between text-sm"><span>Monthly Salary:</span> <span>@slip.BasicSalary.ToString("C", culture)</span></div>
+                        <div class="flex justify-between text-sm"><span>Working Days (Month):</span> <span>@slip.WorkingDaysInMonth</span></div>
+                        <div class="flex justify-between text-sm"><span>Daily Rate:</span> <span>@slip.DailyRate.ToString("C", culture)</span></div>
+                        <div class="flex justify-between text-sm"><span>Hourly Rate:</span> <span>@slip.HourlyRate.ToString("C", culture)</span></div>
+                        <div class="flex justify-between text-sm text-green-600"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+                    </div>
+
+                    <div class="mt-6 space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Attendance Summary</h4>
+                        <div class="flex justify-between text-sm"><span>Days Present:</span> <span>@daysPresent</span></div>
+                        <div class="flex justify-between text-sm"><span>Days Absent:</span> <span>@slip.DaysAbsent</span></div>
+                        <div class="flex justify-between text-sm"><span>Actual OT Hours:</span> <span>@slip.OvertimeHours.ToString("F2")</span></div>
+                        <div class="flex justify-between text-sm"><span>Penalty Hours:</span> <span>@slip.OvertimePenaltyHours.ToString("F2")</span></div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
                         <!-- Earnings Column -->
                         <div class="space-y-3">
                             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Earnings</h4>
-                            <div class="flex justify-between text-sm"><span>Basic Salary:</span> <span>@slip.BasicSalary.ToString("C", culture)</span></div>
-                            <div class="flex justify-between text-sm"><span>Overtime Pay:</span> <span>@slip.OvertimePay.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>Basic Salary (@slip.WorkingDaysInMonth days):</span> <span>@slip.BasicSalary.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm text-green-600"><span>Base Pay Earned (after absences):</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm">
+                                <span>Overtime Pay (@slip.OvertimeHours.ToString("F2") h × @((slip.HourlyRate * 1.25m).ToString("C", culture))):</span>
+                                <span>@slip.OvertimePay.ToString("C", culture)</span>
+                            </div>
+                            <div class="flex justify-between text-sm font-semibold border-t pt-2"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
                         </div>
 
                         <!-- Deductions Column -->
                         <div class="space-y-3">
                             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Deductions</h4>
-                            <div class="flex justify-between text-sm"><span>Absenteeism:</span> <span>- @slip.AbsentDeductions.ToString("C", culture)</span></div>
-                            <div class="flex justify-between text-sm text-red-600"><span>Overtime Penalty:</span> <span>- @slip.OvertimePenalty.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm"><span>Absenteeism (@slip.DaysAbsent day(s) × @slip.DailyRate.ToString("C", culture)):</span> <span>- @slip.AbsentDeductions.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm text-red-600">
+                                <span>Overtime Penalty (@slip.OvertimePenaltyHours.ToString("F2") h × @slip.HourlyRate.ToString("C", culture)):</span>
+                                <span>- @slip.OvertimePenalty.ToString("C", culture)</span>
+                            </div>
                             <div class="flex justify-between text-sm"><span>SSS:</span> <span>- @slip.SSSDeduction.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>PhilHealth:</span> <span>- @slip.PhilHealthDeduction.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>Pag-IBIG:</span> <span>- @slip.PagIBIGDeduction.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>Tax:</span> <span>- @slip.TaxDeduction.ToString("C", culture)</span></div>
+                            <div class="flex justify-between text-sm font-semibold border-t pt-2"><span>Statutory Deductions:</span> <span>- @statutoryDeductions.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
                         </div>
                     </div>
@@ -61,6 +91,8 @@
                     <div class="mt-8 pt-4 border-t-2 border-gray-300">
                         <div class="flex justify-end">
                             <div class="w-full md:w-1/2 space-y-2">
+                                <div class="flex justify-between font-medium"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+                                <div class="flex justify-between font-medium"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
                                 <div class="flex justify-between font-medium"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
                                 <div class="flex justify-between font-medium"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
                                 <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Net Pay:</span> <span>@slip.NetPay.ToString("C", culture)</span></div>

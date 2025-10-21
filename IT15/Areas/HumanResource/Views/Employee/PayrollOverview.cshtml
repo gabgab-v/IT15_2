@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = $"Payroll Overview for {Model.Employee.UserName}";
     var culture = new System.Globalization.CultureInfo("en-PH");
+    var basePayEarned = Math.Max(0m, Model.BasicSalary - Model.AbsentDeductions);
+    var totalAdditions = Model.OvertimePay;
+    var statutoryDeductions = Model.SssDeduction + Model.PhilHealthDeduction + Model.PagIbigDeduction + Model.TaxDeduction;
 }
 
 <div class="border-b border-gray-200 pb-4 mb-6">
@@ -27,25 +30,59 @@
     </div>
 </div>
 
+<!-- Attendance Summary -->
+<div class="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Attendance & Overtime</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
+        <div class="flex justify-between"><span>Days Present:</span> <span>@Model.DaysPresent</span></div>
+        <div class="flex justify-between"><span>Days Absent:</span> <span>@Model.DaysAbsent</span></div>
+        <div class="flex justify-between"><span>Approved OT Hours:</span> <span>@Model.ApprovedOvertimeHours.ToString("F2")</span></div>
+        <div class="flex justify-between"><span>Actual OT Hours:</span> <span>@Model.ActualOvertimeHours.ToString("F2")</span></div>
+        <div class="flex justify-between"><span>Penalty Hours:</span> <span>@Model.OvertimePenaltyHours.ToString("F2")</span></div>
+    </div>
+</div>
+
+<!-- Salary Basis -->
+<div class="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Salary Basis</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
+        <div class="flex justify-between"><span>Monthly Salary:</span> <span>@Model.BasicSalary.ToString("C", culture)</span></div>
+        <div class="flex justify-between"><span>Working Days (Month):</span> <span>@Model.WorkingDaysInMonth</span></div>
+        <div class="flex justify-between"><span>Daily Rate:</span> <span>@Model.DailyRate.ToString("C", culture)</span></div>
+        <div class="flex justify-between"><span>Hourly Rate:</span> <span>@Model.HourlyRate.ToString("C", culture)</span></div>
+        <div class="flex justify-between text-green-600"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+    </div>
+</div>
+
 <!-- Financial Breakdown -->
 <div class="mt-8 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Earnings -->
         <div class="space-y-3">
             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Projected Earnings</h4>
-            <div class="flex justify-between text-sm"><span>Basic Salary:</span> <span>@Model.BasicSalary.ToString("C", culture)</span></div>
-            <div class="flex justify-between text-sm"><span>Overtime Pay:</span> <span>@Model.OvertimePay.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm"><span>Basic Salary (@Model.WorkingDaysInMonth days):</span> <span>@Model.BasicSalary.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm text-green-600"><span>Base Pay Earned (after absences):</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm">
+                <span>Overtime Pay (@Model.ActualOvertimeHours.ToString("F2") h × @((Model.HourlyRate * 1.25m).ToString("C", culture))):</span>
+                <span>@Model.OvertimePay.ToString("C", culture)</span>
+            </div>
+            <div class="flex justify-between text-sm font-semibold border-t pt-2"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
             <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Gross Pay:</span> <span>@Model.GrossPay.ToString("C", culture)</span></div>
         </div>
         <!-- Deductions -->
         <div class="space-y-3">
             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Projected Deductions</h4>
-            <div class="flex justify-between text-sm"><span>Absenteeism:</span> <span>- @Model.AbsentDeductions.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm"><span>Absenteeism (@Model.DaysAbsent day(s) × @Model.DailyRate.ToString("C", culture)):</span> <span>- @Model.AbsentDeductions.ToString("C", culture)</span></div>
             <!-- THE CHANGE: Added a line to display the new Overtime Penalty -->
-            <div class="flex justify-between text-sm text-red-600"><span>Overtime Penalty:</span> <span>- @Model.OvertimePenalty.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm text-red-600">
+                <span>Overtime Penalty (@Model.OvertimePenaltyHours.ToString("F2") h × @Model.HourlyRate.ToString("C", culture)):</span>
+                <span>- @Model.OvertimePenalty.ToString("C", culture)</span>
+            </div>
             <div class="flex justify-between text-sm"><span>SSS:</span> <span>- @Model.SssDeduction.ToString("C", culture)</span></div>
             <div class="flex justify-between text-sm"><span>PhilHealth:</span> <span>- @Model.PhilHealthDeduction.ToString("C", culture)</span></div>
             <div class="flex justify-between text-sm"><span>Pag-IBIG:</span> <span>- @Model.PagIbigDeduction.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm"><span>Tax:</span> <span>- @Model.TaxDeduction.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm font-semibold border-t pt-2"><span>Statutory Deductions:</span> <span>- @statutoryDeductions.ToString("C", culture)</span></div>
             <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total Deductions:</span> <span>- @Model.TotalDeductions.ToString("C", culture)</span></div>
         </div>
     </div>
@@ -53,6 +90,8 @@
     <div class="mt-8 pt-4 border-t-2 border-gray-300">
         <div class="flex justify-end">
             <div class="w-full md:w-1/2 space-y-2">
+                <div class="flex justify-between font-medium"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+                <div class="flex justify-between font-medium"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
                 <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Projected Net Pay:</span> <span>@Model.NetPay.ToString("C", culture)</span></div>
             </div>
         </div>

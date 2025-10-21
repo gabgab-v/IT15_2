@@ -53,6 +53,8 @@ namespace IT15.Services
                 // --- NEW OVERTIME AND PENALTY LOGIC ---
                 decimal totalOvertimePay = 0;
                 decimal totalOvertimePenalty = 0;
+                decimal totalActualOvertimeHours = 0;
+                decimal totalPenaltyHours = 0;
 
                 var approvedRequests = await _context.OvertimeRequests
                     .Where(r => r.RequestingEmployeeId == employee.Id && r.Status == OvertimeStatus.Approved && r.OvertimeDate.Month == month.Month)
@@ -69,7 +71,8 @@ namespace IT15.Services
                         // Calculate penalty if checked out early
                         if (dailyLog.CheckOutTime.Value < approvedEndTime)
                         {
-                            var unworkedHours = (decimal)(approvedEndTime - dailyLog.CheckOutTime.Value).TotalHours;
+                            var unworkedHours = Math.Max(0m, (decimal)(approvedEndTime - dailyLog.CheckOutTime.Value).TotalHours);
+                            totalPenaltyHours += unworkedHours;
                             totalOvertimePenalty += unworkedHours * hourlyRate;
                         }
 
@@ -77,7 +80,8 @@ namespace IT15.Services
                         var overtimeStart = request.OvertimeDate.Date.AddHours(18); // Assumes OT starts at 6 PM
                         if (dailyLog.CheckOutTime.Value > overtimeStart)
                         {
-                            var actualOvertimeHours = (decimal)(dailyLog.CheckOutTime.Value - overtimeStart).TotalHours;
+                            var actualOvertimeHours = Math.Max(0m, (decimal)(dailyLog.CheckOutTime.Value - overtimeStart).TotalHours);
+                            totalActualOvertimeHours += actualOvertimeHours;
                             totalOvertimePay += actualOvertimeHours * hourlyRate * 1.25m; // 125% rate
                         }
                     }
@@ -91,7 +95,7 @@ namespace IT15.Services
                 // Flat tax: 10% of gross pay
                 decimal tax = grossPay * 0.10m;
 
-                decimal totalDeductions = sss + philhealth + pagibig + absentDeductions + totalOvertimePenalty;
+                decimal totalDeductions = sss + philhealth + pagibig + tax + absentDeductions + totalOvertimePenalty;
                 decimal netPay = Math.Max(0, grossPay - totalDeductions);
 
                 var paySlip = new PaySlip
@@ -100,6 +104,11 @@ namespace IT15.Services
                     DaysAbsent = daysAbsent,
                     BasicSalary = basicSalary,
                     OvertimePay = totalOvertimePay,
+                    DailyRate = dailyRate,
+                    HourlyRate = hourlyRate,
+                    WorkingDaysInMonth = workingDaysInMonth,
+                    OvertimeHours = totalActualOvertimeHours,
+                    OvertimePenaltyHours = totalPenaltyHours,
                     OvertimePenalty = totalOvertimePenalty,
                     AbsentDeductions = absentDeductions,
                     SSSDeduction = sss,

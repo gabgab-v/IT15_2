@@ -30,6 +30,20 @@ namespace IT15.Models
         public decimal BasicSalary { get; set; }
         [Column(TypeName = "decimal(18, 2)")]
         public decimal OvertimePay { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal DailyRate { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal HourlyRate { get; set; }
+
+        public int WorkingDaysInMonth { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal OvertimeHours { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal OvertimePenaltyHours { get; set; }
         // Deductions
         [Column(TypeName = "decimal(18, 2)")]
         public decimal AbsentDeductions { get; set; }
