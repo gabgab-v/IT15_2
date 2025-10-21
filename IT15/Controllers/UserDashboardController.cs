@@ -162,32 +162,242 @@ namespace IT15.Controllers
         // --- (All other actions like DailyLogs, CheckIn, Leave, Overtime, Sales, etc., remain here) ---
 
         [HttpGet]
-        public async Task<IActionResult> DailyLogs()
+        public async Task<IActionResult> DailyLogs(int? month, int? year, string statusFilter)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var today = DateTime.UtcNow.Date;
             var now = DateTime.UtcNow;
 
-            // Read the policy from appsettings.json
             var policy = _configuration.GetSection("AttendancePolicy");
             var scheduledEndTimeString = policy["ScheduledEndTime"];
             var scheduledEndTime = today.Add(TimeSpan.Parse(scheduledEndTimeString));
 
-            var userLogs = await _context.DailyLogs
-                .Where(log => log.UserId == userId)
-                .OrderByDescending(log => log.CheckInTime)
+            var selectedYear = year ?? today.Year;
+            var selectedMonth = month ?? today.Month;
+
+            if (selectedMonth < 1 || selectedMonth > 12)
+            {
+                selectedMonth = today.Month;
+            }
+
+            if (selectedYear < 1)
+            {
+                selectedYear = today.Year;
+            }
+
+            var firstDayOfMonth = new DateTime(selectedYear, selectedMonth, 1);
+            var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+
+            var statusOptions = new List<string>
+            {
+                "All",
+                "Present",
+                "Late",
+                "Early Checkout",
+                "Leave",
+                "Absent",
+                "Pending",
+                "Weekend",
+                "Upcoming"
+            };
+
+            var normalizedStatusFilter = string.IsNullOrWhiteSpace(statusFilter) ? "All" : statusFilter.Trim();
+            if (!statusOptions.Any(option => option.Equals(normalizedStatusFilter, StringComparison.OrdinalIgnoreCase)))
+            {
+                normalizedStatusFilter = "All";
+            }
+            var effectiveStatusFilter = normalizedStatusFilter.Equals("All", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : normalizedStatusFilter;
+
+            var monthlyLogsTask = _context.DailyLogs
+                .Where(log => log.UserId == userId && log.CheckInTime.Date >= firstDayOfMonth && log.CheckInTime.Date <= lastDayOfMonth)
                 .ToListAsync();
 
-            var todaysLog = userLogs.FirstOrDefault(log => log.CheckInTime.Date == today);
+            var todaysLogTask = _context.DailyLogs
+                .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
 
-            // THE CHANGE: Use the consolidated UserDashboardViewModel
+            var distinctYearTask = _context.DailyLogs
+                .Where(log => log.UserId == userId)
+                .Select(log => log.CheckInTime.Year)
+                .Distinct()
+                .ToListAsync();
+
+            var approvedLeavesTask = _context.LeaveRequests
+                .Where(r => r.RequestingEmployeeId == userId
+                            && r.Status == LeaveRequestStatus.Approved
+                            && r.EndDate.Date >= firstDayOfMonth
+                            && r.StartDate.Date <= lastDayOfMonth)
+                .ToListAsync();
+
+            await Task.WhenAll(monthlyLogsTask, todaysLogTask, distinctYearTask, approvedLeavesTask);
+
+            var monthlyLogs = monthlyLogsTask.Result;
+            var todaysLog = todaysLogTask.Result;
+            var availableYears = distinctYearTask.Result;
+            var approvedLeaves = approvedLeavesTask.Result;
+
+            if (!availableYears.Contains(today.Year))
+            {
+                availableYears.Add(today.Year);
+            }
+
+            foreach (var leave in approvedLeaves)
+            {
+                if (!availableYears.Contains(leave.StartDate.Year))
+                {
+                    availableYears.Add(leave.StartDate.Year);
+                }
+                if (!availableYears.Contains(leave.EndDate.Year))
+                {
+                    availableYears.Add(leave.EndDate.Year);
+                }
+            }
+
+            if (!availableYears.Contains(selectedYear))
+            {
+                availableYears.Add(selectedYear);
+            }
+            availableYears = availableYears.Distinct().OrderBy(y => y).ToList();
+
+            var leaveByDate = new Dictionary<DateTime, LeaveRequest>();
+            foreach (var leave in approvedLeaves)
+            {
+                var rangeStart = leave.StartDate.Date < firstDayOfMonth ? firstDayOfMonth : leave.StartDate.Date;
+                var rangeEnd = leave.EndDate.Date > lastDayOfMonth ? lastDayOfMonth : leave.EndDate.Date;
+
+                for (var date = rangeStart; date <= rangeEnd; date = date.AddDays(1))
+                {
+                    leaveByDate[date] = leave;
+                }
+            }
+
+            var logsByDate = monthlyLogs
+                .GroupBy(log => log.CheckInTime.Date)
+                .ToDictionary(group => group.Key, group => group.OrderByDescending(l => l.CheckInTime).First());
+
+            var startOfCalendar = firstDayOfMonth.AddDays(-(int)firstDayOfMonth.DayOfWeek);
+            var calendarDays = new List<CalendarDayViewModel>();
+
+            for (int i = 0; i < 42; i++)
+            {
+                var date = startOfCalendar.AddDays(i);
+                var isCurrentMonth = date.Month == selectedMonth && date.Year == selectedYear;
+                var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+
+                logsByDate.TryGetValue(date.Date, out var logForDay);
+                leaveByDate.TryGetValue(date.Date, out var leaveForDay);
+
+                string status;
+                string description = string.Empty;
+
+                if (logForDay != null)
+                {
+                    status = logForDay.Status switch
+                    {
+                        AttendanceStatus.Present => "Present",
+                        AttendanceStatus.Late => "Late",
+                        AttendanceStatus.Absent => "Absent",
+                        AttendanceStatus.EarlyCheckout => "Early Checkout",
+                        _ => "Present"
+                    };
+
+                    description = $"Checked in at {logForDay.CheckInTime:hh:mm tt}";
+                    if (logForDay.CheckOutTime.HasValue)
+                    {
+                        description += $", checked out at {logForDay.CheckOutTime.Value:hh:mm tt}";
+                    }
+
+                    if (logForDay.Status == AttendanceStatus.Late)
+                    {
+                        description += " (Late check-in)";
+                    }
+                    else if (logForDay.Status == AttendanceStatus.EarlyCheckout)
+                    {
+                        description += " (Early checkout)";
+                    }
+                }
+                else if (leaveForDay != null)
+                {
+                    status = "Leave";
+                    description = $"Approved leave - {leaveForDay.Reason}";
+                }
+                else if (!isCurrentMonth)
+                {
+                    status = "Other Month";
+                    description = "Outside the selected month.";
+                }
+                else if (isWeekend)
+                {
+                    status = "Weekend";
+                    description = "Weekend";
+                }
+                else if (date.Date > today)
+                {
+                    status = "Upcoming";
+                    description = "Scheduled workday";
+                }
+                else if (date.Date == today)
+                {
+                    status = todaysLog != null
+                        ? (todaysLog.Status == AttendanceStatus.Late ? "Late" :
+                            todaysLog.Status == AttendanceStatus.EarlyCheckout ? "Early Checkout" : "Present")
+                        : "Pending";
+
+                    if (todaysLog != null)
+                    {
+                        description = $"Checked in at {todaysLog.CheckInTime:hh:mm tt}";
+                        if (todaysLog.CheckOutTime.HasValue)
+                        {
+                            description += $", checked out at {todaysLog.CheckOutTime.Value:hh:mm tt}";
+                        }
+                    }
+                    else
+                    {
+                        description = "No check-in yet.";
+                    }
+                }
+                else
+                {
+                    status = "Absent";
+                    description = "No attendance record.";
+                }
+
+                var isFilteredOut = !string.IsNullOrEmpty(effectiveStatusFilter) &&
+                                    !string.Equals(status, effectiveStatusFilter, StringComparison.OrdinalIgnoreCase);
+
+                if (!isCurrentMonth)
+                {
+                    isFilteredOut = true;
+                }
+
+                calendarDays.Add(new CalendarDayViewModel
+                {
+                    Date = date,
+                    IsCurrentMonth = isCurrentMonth,
+                    IsToday = date.Date == today,
+                    IsWeekend = isWeekend,
+                    IsLeave = leaveForDay != null,
+                    Status = status,
+                    StatusDescription = description,
+                    Log = logForDay,
+                    IsFilteredOut = isFilteredOut
+                });
+            }
+
             var viewModel = new UserDashboardViewModel
             {
-                Logs = userLogs,
+                Logs = monthlyLogs.OrderByDescending(log => log.CheckInTime).ToList(),
                 HasCheckedInToday = todaysLog != null,
                 HasCheckedOutToday = todaysLog?.CheckOutTime.HasValue ?? false,
                 CanCheckOutNow = now >= scheduledEndTime,
-                ScheduledEndTime = scheduledEndTime.ToString("h:mm tt")
+                ScheduledEndTime = scheduledEndTime.ToString("h:mm tt"),
+                SelectedMonth = selectedMonth,
+                SelectedYear = selectedYear,
+                SelectedStatusFilter = normalizedStatusFilter,
+                AvailableYears = availableYears,
+                AvailableStatusFilters = statusOptions,
+                CalendarDays = calendarDays
             };
 
             return View(viewModel);
