@@ -12,6 +12,19 @@
             <p class="mt-2 text-gray-600">Submit your application to join the OpenBook team.</p>
         </div>
 
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="mt-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="mt-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
         <form asp-action="Index" method="post" class="mt-8 space-y-6">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>

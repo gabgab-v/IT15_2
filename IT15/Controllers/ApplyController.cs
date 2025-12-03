@@ -5,16 +5,19 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 using IT15.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace IT15.Controllers
 {
     public class ApplyController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ApplyController> _logger;
 
-        public ApplyController(ApplicationDbContext context)
+        public ApplyController(ApplicationDbContext context, ILogger<ApplyController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -28,19 +31,31 @@ namespace IT15.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(JobApplication application)
         {
-            if (ModelState.IsValid)
+            try
             {
-                // THE FIX: Combine the country code and phone number into a single string.
-                application.PhoneNumber = application.CountryCode + application.PhoneNumber;
+                if (ModelState.IsValid)
+                {
+                    // Combine the country code and phone number into a single string.
+                    application.PhoneNumber = application.CountryCode + application.PhoneNumber;
 
-                application.DateApplied = DateTime.UtcNow;
-                application.Status = ApplicationStatus.Pending;
+                    application.DateApplied = DateTime.UtcNow;
+                    application.Status = ApplicationStatus.Pending;
 
-                _context.JobApplications.Add(application);
-                await _context.SaveChangesAsync();
+                    _context.JobApplications.Add(application);
+                    await _context.SaveChangesAsync();
 
-                return RedirectToAction("Confirmation");
+                    TempData["SuccessMessage"] = "Application submitted successfully.";
+                    return RedirectToAction("Confirmation");
+                }
+
+                ModelState.AddModelError(string.Empty, "Please correct the highlighted errors and resubmit your application.");
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to submit job application for {Email}", application.Email);
+                ModelState.AddModelError(string.Empty, "Something went wrong while submitting your application. Please try again or contact support.");
+            }
+
             return View(application);
         }
 
