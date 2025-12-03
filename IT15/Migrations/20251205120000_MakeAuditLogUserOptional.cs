@@ -1,3 +1,4 @@
+using IT15.Data;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -5,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace IT15.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20251205120000_MakeAuditLogUserOptional")]
     public partial class MakeAuditLogUserOptional : Migration
     {
         /// <inheritdoc />
