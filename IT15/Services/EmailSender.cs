@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
@@ -10,10 +11,12 @@ namespace IT15.Services
     public class EmailSender : IEmailSender
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<EmailSender> _logger;
 
-        public EmailSender(IConfiguration configuration)
+        public EmailSender(IConfiguration configuration, ILogger<EmailSender> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -68,14 +71,17 @@ namespace IT15.Services
                 catch (SmtpException ex)
                 {
                     errors.Add($"{provider.Name}: {ex.Message}");
+                    _logger.LogWarning(ex, "SMTP failure via {Provider} for {Email}", provider.Name, email);
                 }
                 catch (System.Net.Sockets.SocketException ex)
                 {
                     errors.Add($"{provider.Name}: {ex.Message}");
+                    _logger.LogWarning(ex, "Socket failure via {Provider} for {Email}", provider.Name, email);
                 }
             }
 
-            throw new System.Exception("All SMTP providers failed: " + string.Join("; ", errors));
+            // Log and swallow to avoid breaking the user flow; calling code can decide how to notify.
+            _logger.LogError("All SMTP providers failed for {Email}. Errors: {Errors}", email, string.Join("; ", errors));
         }
 
         private SmtpConfig? ReadConfig(string sectionName)
