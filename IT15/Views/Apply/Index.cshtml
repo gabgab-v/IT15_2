@@ -40,6 +40,7 @@
                     </select>
                     <input asp-for="PhoneNumber" type="text" class="flex-1 block w-full min-w-0 rounded-none rounded-r-md px-3 py-2 border border-gray-300" placeholder="e.g., 9171234567" required />
                 </div>
+                <p class="text-xs text-gray-500 mt-1">Digits only, no dashes or spaces.</p>
                 <span asp-validation-for="PhoneNumber" class="text-red-500 text-xs"></span>
             </div>
 

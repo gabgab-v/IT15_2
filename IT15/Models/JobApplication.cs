@@ -23,8 +23,8 @@ namespace IT15.Models
         public string CountryCode { get; set; } = "+63";
 
         [Required]
-        [Phone]
         [Display(Name = "Phone Number")]
+        [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Please enter a valid phone number (7-15 digits).")]
         public string PhoneNumber { get; set; }
 
         public bool EmailConfirmed { get; set; }
