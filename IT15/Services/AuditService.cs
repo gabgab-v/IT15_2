@@ -16,10 +16,14 @@ namespace IT15.Services
 
         public async Task LogAsync(string userId, string userName, string actionType, string details)
         {
+            // Ensure required columns are never null in the database
+            var safeUserId = string.IsNullOrWhiteSpace(userId) ? "N/A" : userId;
+            var safeUserName = string.IsNullOrWhiteSpace(userName) ? "Unknown" : userName;
+
             var auditLog = new AuditLog
             {
-                UserId = userId,
-                UserName = userName,
+                UserId = safeUserId,
+                UserName = safeUserName,
                 ActionType = actionType,
                 Details = details,
                 Timestamp = DateTime.UtcNow
