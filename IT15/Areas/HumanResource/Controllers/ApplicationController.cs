@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.Text;
+using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
@@ -67,27 +67,30 @@ namespace IT15.Areas.HumanResource.Controllers
                 return RedirectToAction("Index");
             }
 
-            var user = new IdentityUser { UserName = application.Username, Email = application.Email, PhoneNumber = application.PhoneNumber, EmailConfirmed = true };
-            var result = await _userManager.CreateAsync(user); // No password is set initially
+            application.Status = ApplicationStatus.Approved;
+            application.EmailConfirmed = false;
+            application.EmailConfirmationToken = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(64));
+            await _context.SaveChangesAsync();
 
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(user, "User");
-                application.Status = ApplicationStatus.Approved;
-                await _context.SaveChangesAsync();
+            var confirmationUrl = Url.Action(
+                "ConfirmEmail",
+                "Apply",
+                new { area = "", applicationId = application.Id, token = application.EmailConfirmationToken },
+                protocol: Request.Scheme);
+            var registerUrl = Url.Page(
+                "/Account/Register",
+                pageHandler: null,
+                values: new { area = "Identity" },
+                protocol: Request.Scheme);
 
-                // Send an email with a password reset link
-                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page("/Account/ResetPassword", pageHandler: null, values: new { area = "Identity", code }, protocol: Request.Scheme);
+            await _emailSender.SendEmailAsync(application.Email, "Your Application is Approved! Confirm Your Email",
+                $"Hi {application.Username},<br/><br/>" +
+                $"Your application has been approved. Please confirm your email to finish setting up your account by <a href='{HtmlEncoder.Default.Encode(confirmationUrl)}'>clicking here</a>.<br/><br/>" +
+                $"After confirming, register with the same email and username you applied with, and choose your own password here: <a href='{HtmlEncoder.Default.Encode(registerUrl)}'>Complete Registration</a>.");
 
-                await _emailSender.SendEmailAsync(application.Email, "Your Application is Approved!",
-                    $"Welcome to OpenBook HRIS! Please set your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                var currentUser = await _userManager.GetUserAsync(User);
-                await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Job Application Approved", $"Approved application for '{application.Username}'. New user account created.");
-                TempData["SuccessMessage"] = "Application approved. A welcome email with instructions to set a password has been sent.";
-            }
+            var currentUser = await _userManager.GetUserAsync(User);
+            await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Job Application Approved", $"Approved application for '{application.Username}'. Email confirmation sent to applicant.");
+            TempData["SuccessMessage"] = "Application approved. A confirmation email has been sent to the applicant to verify their email and finish registration.";
 
             return RedirectToAction("Index");
         }

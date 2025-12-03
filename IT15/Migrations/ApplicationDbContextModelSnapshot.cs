@@ -271,6 +271,12 @@ namespace IT15.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("EmailConfirmationToken")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("DateApplied")
                         .HasColumnType("timestamptz");
 

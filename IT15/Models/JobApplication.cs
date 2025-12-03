@@ -27,6 +27,10 @@ namespace IT15.Models
         [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
 
+        public bool EmailConfirmed { get; set; }
+
+        public string EmailConfirmationToken { get; set; }
+
         public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
 
         public DateTime DateApplied { get; set; }
