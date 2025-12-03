@@ -200,7 +200,12 @@ namespace IT15.Data
             // This is important for PostgreSQL
             builder.Entity<AuditLog>(entity =>
             {
-                // entity.Property(e => e.Timestamp).HasColumnType("timestamp with time zone");
+                // Allow unauthenticated events by permitting null UserId and set FK to null on delete
+                entity.Property(e => e.UserId).IsRequired(false);
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Add similar configurations for other entities as needed

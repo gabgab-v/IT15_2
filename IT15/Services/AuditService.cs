@@ -14,10 +14,10 @@ namespace IT15.Services
             _context = context;
         }
 
-        public async Task LogAsync(string userId, string userName, string actionType, string details)
+        public async Task LogAsync(string? userId, string? userName, string actionType, string details)
         {
-            // Ensure required columns are never null in the database
-            var safeUserId = string.IsNullOrWhiteSpace(userId) ? "N/A" : userId;
+            // Normalize missing identifiers to avoid FK/NOT NULL violations
+            var safeUserId = string.IsNullOrWhiteSpace(userId) || userId == "N/A" ? null : userId;
             var safeUserName = string.IsNullOrWhiteSpace(userName) ? "Unknown" : userName;
 
             var auditLog = new AuditLog
