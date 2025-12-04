@@ -129,8 +129,8 @@ namespace IT15.Areas.Identity.Pages.Account
                     await _userManager.AddToRoleAsync(user, "User");
                     await _auditService.LogAsync(user.Id, user.UserName, "User Registration Success", $"New user '{user.UserName}' registered successfully.");
 
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
+                    // Do not auto-sign the user in after registration; send them to the homepage instead.
+                    return LocalRedirect("~/");
                 }
                 foreach (var error in result.Errors)
                 {
