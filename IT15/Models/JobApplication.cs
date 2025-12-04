@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace IT15.Models
 {
@@ -27,9 +28,11 @@ namespace IT15.Models
         [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Please enter a valid phone number (7-15 digits).")]
         public string PhoneNumber { get; set; }
 
+        [BindNever]
         public bool EmailConfirmed { get; set; }
 
-        public string EmailConfirmationToken { get; set; }
+        [BindNever]
+        public string? EmailConfirmationToken { get; set; }
 
         public ApplicationStatus Status { get; set; } = ApplicationStatus.Pending;
 
