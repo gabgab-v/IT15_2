@@ -90,7 +90,7 @@ namespace IT15.Areas.HumanResource.Controllers
 
             var currentUser = await _userManager.GetUserAsync(User);
             await _auditService.LogAsync(currentUser.Id, currentUser.UserName, "Job Application Approved", $"Approved application for '{application.Username}'. Email confirmation sent to applicant.");
-            TempData["SuccessMessage"] = "Application approved. A confirmation email has been sent to the applicant to verify their email and finish registration.";
+            TempData["SuccessMessage"] = $"Application approved. A confirmation email has been sent. If the applicant does not receive it, share this link: {confirmationUrl}";
 
             return RedirectToAction("Index");
         }

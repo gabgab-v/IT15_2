@@ -86,7 +86,7 @@ namespace IT15.Services
 
         private SmtpConfig? ReadConfig(string sectionName)
         {
-            var host = _configuration[$"{sectionName}:Host"];
+            var host = _configuration[$"{sectionName}:Host"] ?? _configuration[$"{sectionName}:Server"];
             var portValue = _configuration[$"{sectionName}:Port"];
             var username = _configuration[$"{sectionName}:Username"];
             var password = _configuration[$"{sectionName}:Password"];
