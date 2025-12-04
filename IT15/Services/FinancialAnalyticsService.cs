@@ -156,16 +156,25 @@ namespace IT15.Services
         {
             var cutoff = DateTime.UtcNow.Date.AddMonths(-monthsBack + 1);
 
-            var monthlySales = await _context.CompanyLedger.AsNoTracking()
+            // Fetch aggregates in SQL and materialize before creating the record to avoid translation issues.
+            var monthlySalesRaw = await _context.CompanyLedger.AsNoTracking()
                 .Where(l => l.EntryType == LedgerEntryType.Income
                             && l.Category == LedgerEntryCategory.Sales
                             && l.TransactionDate >= cutoff)
                 .GroupBy(l => new { l.TransactionDate.Year, l.TransactionDate.Month })
-                .Select(g => new MonthlyRevenuePoint(
-                    new DateTime(g.Key.Year, g.Key.Month, 1),
-                    g.Sum(x => x.Amount)))
-                .OrderBy(p => p.Month)
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Total = g.Sum(x => x.Amount)
+                })
+                .OrderBy(g => g.Year)
+                .ThenBy(g => g.Month)
                 .ToListAsync();
+
+            var monthlySales = monthlySalesRaw
+                .Select(g => new MonthlyRevenuePoint(new DateTime(g.Year, g.Month, 1), g.Total))
+                .ToList();
 
             if (monthlySales.Count < 4)
             {
