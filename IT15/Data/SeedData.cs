@@ -62,6 +62,23 @@ namespace IT15.Data // Make sure this namespace matches your project
                 }
             }
 
+            // Seed a default accounting user for finance access.
+            var accountingEmail = configuration["AppSettings:AccountingUser:Email"];
+            var accountingPassword = configuration["AppSettings:AccountingUser:Password"];
+            if (!string.IsNullOrWhiteSpace(accountingEmail) && !string.IsNullOrWhiteSpace(accountingPassword))
+            {
+                var accountingUser = await userManager.FindByEmailAsync(accountingEmail);
+                if (accountingUser == null)
+                {
+                    accountingUser = new IdentityUser { UserName = accountingEmail, Email = accountingEmail, EmailConfirmed = true };
+                    var createAccountingResult = await userManager.CreateAsync(accountingUser, accountingPassword);
+                    if (createAccountingResult.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(accountingUser, "Accounting");
+                    }
+                }
+            }
+
             if (!await context.DeliveryServices.AnyAsync())
             {
                 context.DeliveryServices.AddRange(
