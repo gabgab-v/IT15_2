@@ -220,32 +220,25 @@ namespace IT15.Controllers
                 ? null
                 : normalizedStatusFilter;
 
-            var monthlyLogsTask = _context.DailyLogs
+            var monthlyLogs = await _context.DailyLogs
                 .Where(log => log.UserId == userId && log.CheckInTime.Date >= firstDayOfMonth && log.CheckInTime.Date <= lastDayOfMonth)
                 .ToListAsync();
 
-            var todaysLogTask = _context.DailyLogs
+            var todaysLog = await _context.DailyLogs
                 .FirstOrDefaultAsync(log => log.UserId == userId && log.CheckInTime.Date == today);
 
-            var distinctYearTask = _context.DailyLogs
+            var availableYears = await _context.DailyLogs
                 .Where(log => log.UserId == userId)
                 .Select(log => log.CheckInTime.Year)
                 .Distinct()
                 .ToListAsync();
 
-            var approvedLeavesTask = _context.LeaveRequests
+            var approvedLeaves = await _context.LeaveRequests
                 .Where(r => r.RequestingEmployeeId == userId
                             && r.Status == LeaveRequestStatus.Approved
                             && r.EndDate.Date >= firstDayOfMonth
                             && r.StartDate.Date <= lastDayOfMonth)
                 .ToListAsync();
-
-            await Task.WhenAll(monthlyLogsTask, todaysLogTask, distinctYearTask, approvedLeavesTask);
-
-            var monthlyLogs = monthlyLogsTask.Result;
-            var todaysLog = todaysLogTask.Result;
-            var availableYears = distinctYearTask.Result;
-            var approvedLeaves = approvedLeavesTask.Result;
 
             if (!availableYears.Contains(today.Year))
             {
