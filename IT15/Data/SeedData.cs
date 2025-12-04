@@ -45,6 +45,23 @@ namespace IT15.Data // Make sure this namespace matches your project
                 }
             }
 
+            // --- Seed a default non-admin user for quick logins ---
+            var seedUserEmail = configuration["AppSettings:SeedUser:Email"];
+            var seedUserPassword = configuration["AppSettings:SeedUser:Password"];
+            if (!string.IsNullOrWhiteSpace(seedUserEmail) && !string.IsNullOrWhiteSpace(seedUserPassword))
+            {
+                var seededUser = await userManager.FindByEmailAsync(seedUserEmail);
+                if (seededUser == null)
+                {
+                    seededUser = new IdentityUser { UserName = seedUserEmail, Email = seedUserEmail, EmailConfirmed = true };
+                    var createUserResult = await userManager.CreateAsync(seededUser, seedUserPassword);
+                    if (createUserResult.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(seededUser, "User");
+                    }
+                }
+            }
+
             if (!await context.DeliveryServices.AnyAsync())
             {
                 context.DeliveryServices.AddRange(
