@@ -64,7 +64,7 @@ namespace IT15.Areas.Accounting.Controllers
             {
                 Payroll = payroll,
                 PaySlips = payroll.PaySlips.ToList(),
-                TotalNetPay = payroll.PaySlips.Sum(ps => ps.NetPay)
+                TotalNetPayWithTaxes = payroll.PaySlips.Sum(ps => ps.NetPay + ps.TaxDeduction)
             };
 
             return View(viewModel);

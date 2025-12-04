@@ -32,6 +32,10 @@ namespace IT15.Areas.Accounting.Controllers
                 .Include(p => p.PaySlips)
                 .ToListAsync();
 
+            var totalPendingPayrollWithTaxes = pendingPayrolls
+                .SelectMany(p => p.PaySlips)
+                .Sum(s => s.NetPay + s.TaxDeduction);
+
             var snapshot = await _analyticsService.GetSnapshotAsync(today);
             var receivablesSummary = await _analyticsService.GetReceivablesSummaryAsync(today);
             var payablesSummary = await _analyticsService.GetPayablesSummaryAsync(today);
@@ -40,7 +44,7 @@ namespace IT15.Areas.Accounting.Controllers
             var viewModel = new AccountingDashboardViewModel
             {
                 PayrollsPendingApprovalCount = pendingPayrolls.Count,
-                TotalPendingPayrollValue = pendingPayrolls.SelectMany(p => p.PaySlips).Sum(s => s.NetPay),
+                TotalPendingPayrollValue = totalPendingPayrollWithTaxes,
                 PayrollsApprovedThisMonth = await _context.Payrolls
                     .CountAsync(p => p.Status != PayrollStatus.PendingApproval && p.DateApproved.HasValue && p.DateApproved.Value.Month == today.Month),
                 AvailableFunds = await _context.CompanyLedger.SumAsync(t => t.Amount),

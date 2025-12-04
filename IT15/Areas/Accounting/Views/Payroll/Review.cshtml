@@ -23,8 +23,9 @@
             <p class="text-lg font-bold text-gray-900">@Model.PaySlips.Count</p>
         </div>
         <div>
-            <p class="text-sm font-medium text-gray-500">Total Net Pay</p>
-            <p class="text-lg font-bold text-gray-900">@Model.TotalNetPay.ToString("C", culture)</p>
+            <p class="text-sm font-medium text-gray-500">Total Net Pay + Taxes</p>
+            <p class="text-lg font-bold text-gray-900">@Model.TotalNetPayWithTaxes.ToString("C", culture)</p>
+            <p class="text-xs text-gray-500 mt-1">Includes withheld tax amounts.</p>
         </div>
         <div>
             <p class="text-sm font-medium text-gray-500">Date Generated</p>

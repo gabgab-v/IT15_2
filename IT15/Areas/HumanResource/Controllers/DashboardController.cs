@@ -1,4 +1,5 @@
 ﻿using IT15.Data;
+using IT15.Models;
 using IT15.ViewModels.HumanResource;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

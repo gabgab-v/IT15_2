@@ -7,6 +7,6 @@ namespace IT15.ViewModels.HumanResource
     {
         public Payroll Payroll { get; set; }
         public List<PaySlip> PaySlips { get; set; } = new List<PaySlip>();
-        public decimal TotalNetPay { get; set; }
+        public decimal TotalNetPayWithTaxes { get; set; }
     }
 }

@@ -78,7 +78,7 @@ namespace IT15.Areas.Accounting.Controllers
 
             var endOfMonth = payroll.PayrollMonth.AddMonths(1).AddDays(-1);
             var availableFunds = await _context.CompanyLedger.Where(t => t.TransactionDate <= endOfMonth).SumAsync(t => t.Amount);
-            var totalPayrollCost = payroll.PaySlips.Sum(p => p.NetPay);
+            var totalPayrollCost = payroll.PaySlips.Sum(p => p.NetPay + p.TaxDeduction);
 
             var currentUser = await _userManager.GetUserAsync(User);
 
