@@ -14,6 +14,7 @@
 <body class="bg-gray-100">
     @{
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
     }
 
@@ -24,32 +25,32 @@
                 <span class="text-xl font-bold text-gray-800">HR Panel</span>
             </div>
             <nav class="flex-1 px-4 py-4 space-y-2">
-                <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium bg-blue-50 text-blue-600 rounded-lg">
+                <a asp-area="HumanResource" asp-controller="Dashboard" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i>
                     Dashboard
                 </a>
-                <a asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                <a asp-area="HumanResource" asp-controller="LeaveRequest" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "LeaveRequest", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
                     Leave Requests
                 </a>
-                <a asp-area="HumanResource" asp-controller="Employee" asp-action="LeaveBalances" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                <a asp-area="HumanResource" asp-controller="Employee" asp-action="LeaveBalances" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="award" class="w-5 h-5 mr-3"></i>
                     Leave Balances
                 </a>
                
-                <a asp-area="HumanResource" asp-controller="Attendance" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"> 
+                <a asp-area="HumanResource" asp-controller="Attendance" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Attendance", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")"> 
                     <i data-lucide="clock" class="w-5 h-5 mr-3"></i> 
                     Overtime Approval 
                 </a>
-                <a asp-area="HumanResource" asp-controller="Employee" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                <a asp-area="HumanResource" asp-controller="Employee" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                     Employee Overview
                 </a>
-                <a asp-area="HumanResource" asp-controller="Application" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"> 
+                <a asp-area="HumanResource" asp-controller="Application" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Application", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")"> 
                     <i data-lucide="file-plus-2" class="w-5 h-5 mr-3"></i> 
                     Job Applications 
                 </a>
-                <a asp-area="HumanResource" asp-controller="Resignation" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"> 
+                <a asp-area="HumanResource" asp-controller="Resignation" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Resignation", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")"> 
                     <i data-lucide="user-minus" class="w-5 h-5 mr-3"></i> 
                     Resignation Mngmt 
                 </a>

@@ -52,7 +52,7 @@
                     Daily Log
                 </a>
                 <a asp-controller="UserDashboard" asp-action="Sales"
-                   class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(currentAction == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "Sales" ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
+                   class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @((string.Equals(currentAction, "Sales", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "SalesHistory", StringComparison.OrdinalIgnoreCase)) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>
                     Record Sales
                 </a>
