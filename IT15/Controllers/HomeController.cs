@@ -15,6 +15,25 @@ namespace IT15.Controllers
 
         public IActionResult Index()
         {
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                if (User.IsInRole("Admin"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                }
+                if (User.IsInRole("HumanResource"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "HumanResource" });
+                }
+                if (User.IsInRole("Accounting"))
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "Accounting" });
+                }
+
+                // Default authenticated landing page for standard users
+                return RedirectToAction("Index", "UserDashboard");
+            }
+
             return View();
         }
 
