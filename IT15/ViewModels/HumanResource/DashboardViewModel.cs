@@ -1,6 +1,4 @@
-﻿using IT15.Models;
-
-namespace IT15.ViewModels.HumanResource
+﻿namespace IT15.ViewModels.HumanResource
 {
     public class HumanResourceDashboardViewModel
     {
@@ -14,7 +12,5 @@ namespace IT15.ViewModels.HumanResource
 
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-
-        public List<Holiday> UpcomingHolidays { get; set; } = new List<Holiday>();
     }
 }

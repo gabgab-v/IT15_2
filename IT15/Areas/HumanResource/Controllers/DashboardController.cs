@@ -1,6 +1,4 @@
 ﻿using IT15.Data;
-using IT15.Models;
-using IT15.Services;
 using IT15.ViewModels.HumanResource;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,12 +15,10 @@ namespace IT15.Areas.HumanResource.Controllers
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly HolidayApiService _holidayApiService;
 
-        public DashboardController(ApplicationDbContext context, HolidayApiService holidayApiService)
+        public DashboardController(ApplicationDbContext context)
         {
             _context = context;
-            _holidayApiService = holidayApiService;
         }
 
         // THE CHANGE: The Index action now accepts startDate and endDate parameters.
@@ -37,9 +33,6 @@ namespace IT15.Areas.HumanResource.Controllers
             var pendingLeaveRequests = await _context.LeaveRequests.CountAsync(r => r.Status == LeaveRequestStatus.Pending);
             var onLeaveToday = await _context.LeaveRequests.CountAsync(r => r.Status == LeaveRequestStatus.Approved && r.StartDate <= today && r.EndDate >= today);
             var pendingPayrolls = await _context.Payrolls.CountAsync(p => p.Status == PayrollStatus.PendingApproval);
-
-            // --- Fetch Holiday Data (remains the same) ---
-            var upcomingHolidays = (await _holidayApiService.GetUpcomingHolidaysAsync("PH")).Take(5).ToList();
 
             // --- UPDATED CHART DATA LOGIC ---
             var attendanceData = await _context.DailyLogs
@@ -64,7 +57,6 @@ namespace IT15.Areas.HumanResource.Controllers
                 PendingLeaveRequestsCount = pendingLeaveRequests,
                 EmployeesOnLeaveToday = onLeaveToday,
                 PayrollsPendingApprovalCount = pendingPayrolls,
-                UpcomingHolidays = upcomingHolidays,
                 AttendanceChartLabels = chartLabels,
                 AttendanceChartData = chartData,
                 StartDate = start,
