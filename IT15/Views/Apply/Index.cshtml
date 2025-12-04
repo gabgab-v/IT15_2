@@ -27,7 +27,7 @@
 
         <form asp-action="Index" method="post" class="mt-8 space-y-6">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
+            <div asp-validation-summary="All" class="text-red-600 bg-red-50 p-3 rounded-lg text-sm"></div>
 
             <div>
                 <label asp-for="Username" class="block text-sm font-medium text-gray-700"></label>

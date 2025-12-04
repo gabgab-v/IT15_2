@@ -6,6 +6,7 @@ using System;
 using System.Threading.Tasks;
 using IT15.ViewModels;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace IT15.Controllers
 {
@@ -46,6 +47,12 @@ namespace IT15.Controllers
 
                     TempData["SuccessMessage"] = "Application submitted successfully.";
                     return RedirectToAction("Confirmation");
+                }
+
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(e => !string.IsNullOrWhiteSpace(e)).ToList();
+                if (errors.Any())
+                {
+                    TempData["ErrorMessage"] = "We couldn't submit your application: " + string.Join(" ", errors);
                 }
 
                 ModelState.AddModelError(string.Empty, "Please correct the highlighted errors and resubmit your application.");
