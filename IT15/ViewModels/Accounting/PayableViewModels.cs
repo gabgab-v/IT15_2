@@ -70,7 +70,7 @@ namespace IT15.ViewModels.Accounting
         public decimal OutstandingAmount { get; set; }
 
         [Required]
-        [Range(0.01, double.MaxValue)]
+        [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ErrorMessage = "Payment amount must be greater than zero.")]
         [DataType(DataType.Currency)]
         [Display(Name = "Payment Amount")]
         public decimal Amount { get; set; }
