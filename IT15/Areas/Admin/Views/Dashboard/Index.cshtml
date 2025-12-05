@@ -6,7 +6,11 @@
 
 <div class="border-b border-gray-200 pb-4 mb-6">
     <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-    <p class="text-gray-500 mt-1">A summary of key metrics for today, @DateTime.UtcNow.ToString("dddd, MMMM dd, yyyy").</p>
+    <p class="text-gray-500 mt-1">A summary of key metrics for today, @DateTime.Now.ToString("dddd, MMMM dd, yyyy").</p>
+    <p class="text-gray-500 text-sm mt-1 flex items-center space-x-2">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span id="admin-current-time">--:-- --</span>
+    </p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -49,4 +53,19 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('admin-current-time');
+            const update = () => {
+                if (!el) return;
+                const now = new Date();
+                el.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            };
+            update();
+            setInterval(update, 1000);
+        });
+    </script>
+}
 

@@ -9,6 +9,10 @@
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-800">Accounting Dashboard</h1>
     <p class="text-gray-600 mt-1">Real-time view of company cash flow, payables, and receivables.</p>
+    <p class="text-gray-500 text-sm mt-1 flex items-center space-x-2">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span id="accounting-current-time">--:-- --</span>
+    </p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,7 +65,7 @@
                 <p class="text-2xl font-bold text-gray-900">@Model.PayrollsApprovedThisMonth</p>
             </div>
         </div>
-        <p class="text-gray-400 mt-4 text-sm">Approvals logged during @DateTime.UtcNow.ToString("MMMM").</p>
+        <p class="text-gray-400 mt-4 text-sm">Approvals logged during @DateTime.Now.ToString("MMMM").</p>
     </div>
 </div>
 
@@ -69,7 +73,7 @@
     <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Daily Cash Flow</h2>
-            <span class="text-sm text-gray-500">@DateTime.UtcNow.ToString("MMMM dd, yyyy")</span>
+            <span class="text-sm text-gray-500">@DateTime.Now.ToString("MMMM dd, yyyy")</span>
         </div>
         <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div class="p-4 bg-green-50 rounded border border-green-100">
@@ -91,7 +95,7 @@
     <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Month-to-Date</h2>
-            <span class="text-sm text-gray-500">@DateTime.UtcNow.ToString("MMMM yyyy")</span>
+            <span class="text-sm text-gray-500">@DateTime.Now.ToString("MMMM yyyy")</span>
         </div>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div class="p-4 bg-green-50 rounded border border-green-100">
@@ -118,6 +122,21 @@
         <p class="text-xs text-gray-400 mt-3">Supply requests include product replenishments approved this month.</p>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('accounting-current-time');
+            const update = () => {
+                if (!el) return;
+                const now = new Date();
+                el.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            };
+            update();
+            setInterval(update, 1000);
+        });
+    </script>
+}
 
 <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
