@@ -35,6 +35,8 @@
     <form asp-action="RecordPayment" method="post" class="px-6 py-5 space-y-5">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="ReceivableId" />
+        <input type="hidden" asp-for="CustomerName" />
+        <input type="hidden" asp-for="ReferenceNumber" />
         <div asp-validation-summary="All" class="text-sm text-red-600"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
