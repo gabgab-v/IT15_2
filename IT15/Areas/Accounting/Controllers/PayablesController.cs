@@ -168,6 +168,16 @@ namespace IT15.Areas.Accounting.Controllers
 
             var outstanding = Math.Max(0, payable.BillAmount - paid);
 
+            if (outstanding <= 0)
+            {
+                ModelState.AddModelError(string.Empty, "This bill is already fully paid.");
+            }
+
+            if (model.Amount <= 0)
+            {
+                ModelState.AddModelError(nameof(model.Amount), "Payment amount must be greater than zero.");
+            }
+
             if (model.Amount > outstanding)
             {
                 ModelState.AddModelError(nameof(model.Amount), "Payment amount cannot exceed outstanding balance.");

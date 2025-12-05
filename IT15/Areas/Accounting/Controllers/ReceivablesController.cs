@@ -167,6 +167,16 @@ namespace IT15.Areas.Accounting.Controllers
 
             var outstanding = Math.Max(0, receivable.InvoiceAmount - collected);
 
+            if (outstanding <= 0)
+            {
+                ModelState.AddModelError(string.Empty, "This invoice is already fully collected.");
+            }
+
+            if (model.Amount <= 0)
+            {
+                ModelState.AddModelError(nameof(model.Amount), "Collection amount must be greater than zero.");
+            }
+
             if (model.Amount > outstanding)
             {
                 ModelState.AddModelError(nameof(model.Amount), "Collection amount cannot exceed outstanding balance.");
