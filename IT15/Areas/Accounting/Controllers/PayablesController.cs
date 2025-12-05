@@ -131,6 +131,12 @@ namespace IT15.Areas.Accounting.Controllers
                 return NotFound();
             }
 
+            if (payable.Status == PayableStatus.Cancelled)
+            {
+                TempData["ErrorMessage"] = "This payable is cancelled and cannot be paid.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var paid = payable.LedgerEntries
                 .Where(e => e.EntryType == LedgerEntryType.Expense)
                 .Sum(e => -e.Amount);
@@ -160,6 +166,12 @@ namespace IT15.Areas.Accounting.Controllers
             if (payable == null)
             {
                 return NotFound();
+            }
+
+            if (payable.Status == PayableStatus.Cancelled)
+            {
+                TempData["ErrorMessage"] = "This payable is cancelled and cannot be paid.";
+                return RedirectToAction(nameof(Index));
             }
 
             var paid = payable.LedgerEntries

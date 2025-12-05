@@ -130,6 +130,12 @@ namespace IT15.Areas.Accounting.Controllers
                 return NotFound();
             }
 
+            if (receivable.Status == ReceivableStatus.WrittenOff)
+            {
+                TempData["ErrorMessage"] = "This receivable is written off and cannot be collected.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var collected = receivable.LedgerEntries
                 .Where(e => e.EntryType == LedgerEntryType.Income)
                 .Sum(e => e.Amount);
@@ -159,6 +165,12 @@ namespace IT15.Areas.Accounting.Controllers
             if (receivable == null)
             {
                 return NotFound();
+            }
+
+            if (receivable.Status == ReceivableStatus.WrittenOff)
+            {
+                TempData["ErrorMessage"] = "This receivable is written off and cannot be collected.";
+                return RedirectToAction(nameof(Index));
             }
 
             var collected = receivable.LedgerEntries
