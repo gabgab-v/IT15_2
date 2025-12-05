@@ -8,7 +8,11 @@
 <!-- Welcome Header -->
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-800">Welcome, @User.Identity.Name!</h1>
-    <p class="text-gray-600 mt-1">Here is your summary for today, @DateTime.UtcNow.ToString("dddd, MMMM dd").</p>
+    <p class="text-gray-600 mt-1">Here is your summary for today, @DateTime.Now.ToString("dddd, MMMM dd").</p>
+    <p class="text-gray-500 text-sm mt-1 flex items-center space-x-2">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span id="current-time-text">--:-- --</span>
+    </p>
 </div>
 
 <!-- Main Dashboard Grid -->
@@ -108,6 +112,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const timeEl = document.getElementById('current-time-text');
+            const updateClock = () => {
+                if (!timeEl) return;
+                const now = new Date();
+                timeEl.textContent = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+
             // --- Leave Balance Donut Chart ---
             const leaveCtx = document.getElementById('leaveChart');
             if (leaveCtx) {
