@@ -443,13 +443,49 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> OvertimeRequests()
+        public async Task<IActionResult> OvertimeRequests(string search, string status, DateTime? startDate, DateTime? endDate)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var requests = await _context.OvertimeRequests
-                .Where(r => r.RequestingEmployeeId == userId)
+
+            ViewData["Search"] = search;
+            ViewData["Status"] = status;
+            ViewData["StartDate"] = startDate?.ToString("yyyy-MM-dd");
+            ViewData["EndDate"] = endDate?.ToString("yyyy-MM-dd");
+
+            var query = _context.OvertimeRequests
+                .Where(r => r.RequestingEmployeeId == userId);
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OvertimeStatus>(status, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.OvertimeDate >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(r => r.OvertimeDate < end);
+            }
+
+            var requests = await query
                 .OrderByDescending(r => r.DateRequested)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                requests = requests
+                    .Where(r =>
+                        (r.Reason ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.OvertimeDate.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.Status.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             return View(requests);
         }
 
@@ -481,13 +517,50 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> LeaveRequests()
+        public async Task<IActionResult> LeaveRequests(string search, string status, DateTime? startDate, DateTime? endDate)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var requests = await _context.LeaveRequests
-                .Where(r => r.RequestingEmployeeId == userId)
+
+            ViewData["Search"] = search;
+            ViewData["Status"] = status;
+            ViewData["StartDate"] = startDate?.ToString("yyyy-MM-dd");
+            ViewData["EndDate"] = endDate?.ToString("yyyy-MM-dd");
+
+            var query = _context.LeaveRequests
+                .Where(r => r.RequestingEmployeeId == userId);
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<LeaveRequestStatus>(status, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.StartDate >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(r => r.EndDate < end);
+            }
+
+            var requests = await query
                 .OrderByDescending(r => r.DateRequested)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                requests = requests
+                    .Where(r =>
+                        (r.Reason ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.StartDate.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.EndDate.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.Status.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             return View(requests);
         }
 
@@ -557,8 +630,10 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Sales()
+        public async Task<IActionResult> Sales(string search)
         {
+            ViewData["Search"] = search;
+
             var apiProducts = await _incomeApiService.GetProductsAsync();
             var localSupplies = await _context.Supplies.ToDictionaryAsync(s => s.Name, s => s.StockLevel);
 
@@ -567,6 +642,14 @@ namespace IT15.Controllers
                 Product = product,
                 StockLevel = localSupplies.TryGetValue(product.Title, out var stockLevel) ? stockLevel : 0
             }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                salesProducts = salesProducts
+                    .Where(p => p.Product.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
 
             // --- NEW: Fetch additional data for the view ---
             var salesPolicy = _configuration.GetSection("SalesPolicy");
@@ -774,15 +857,54 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> MyRequests()
+        public async Task<IActionResult> MyRequests(string search, string status, DateTime? startDate, DateTime? endDate)
         {
-            var requests = await _context.SupplyRequests
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            ViewData["Search"] = search;
+            ViewData["Status"] = status;
+            ViewData["StartDate"] = startDate?.ToString("yyyy-MM-dd");
+            ViewData["EndDate"] = endDate?.ToString("yyyy-MM-dd");
+
+            var query = _context.SupplyRequests
                 .Include(r => r.Supply)
                     .ThenInclude(s => s.Supplier)
                 .Include(r => r.DeliveryService)
-                .Include(r => r.RequestingEmployee) // Eager load the employee who made the request
+                .Include(r => r.RequestingEmployee)
+                .Where(r => r.RequestingEmployeeId == userId);
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SupplyRequestStatus>(status, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.DateRequested >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(r => r.DateRequested < end);
+            }
+
+            var requests = await query
                 .OrderByDescending(r => r.DateRequested)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                requests = requests
+                    .Where(r =>
+                        (r.Supply?.Name ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        (r.RequestingEmployee?.UserName ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        (r.DeliveryService?.Name ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                        r.Status.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             return View(requests);
         }
 

@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = "Sales & Inventory";
     Layout = "~/Views/UserDashboard/_Layout.cshtml";
+    var search = ViewData["Search"] as string ?? string.Empty;
+    var products = Model.Products ?? new List<IT15.ViewModels.SalesProductViewModel>();
 }
 
 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 pb-4 mb-6">
@@ -14,6 +16,29 @@
         <p class="text-sm font-medium text-gray-500">Total Company Funds</p>
         <p class="text-2xl font-bold text-green-600">@Model.CurrentBalance.ToString("C", new System.Globalization.CultureInfo("en-PH"))</p>
     </div>
+</div>
+
+<div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
+    <form asp-action="Sales" method="get" class="flex flex-col sm:flex-row gap-4 sm:items-end">
+        <div class="flex-1">
+            <label for="search" class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Search products</label>
+            <input type="text"
+                   id="search"
+                   name="search"
+                   value="@search"
+                   placeholder="Search by product name"
+                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="submit" class="bg-blue-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Apply
+            </button>
+            <a asp-action="Sales" class="text-sm font-medium text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50">
+                Reset
+            </a>
+            <span class="text-sm text-gray-500">Showing @products.Count item(s)</span>
+        </div>
+    </form>
 </div>
 
 @if (TempData["SuccessMessage"] != null) { /* ... success message ... */ }
@@ -28,10 +53,10 @@
         </a>
 
     </div>
-    @if (Model.Products.Any())
+    @if (products.Any())
     {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            @foreach (var item in Model.Products)
+            @foreach (var item in products)
             {
                 <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col transition duration-300 hover:shadow-xl">
                     <div class="h-48 bg-gray-100 flex items-center justify-center p-4">

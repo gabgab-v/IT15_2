@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using System
+@using System.Linq
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -43,6 +45,17 @@
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+        var rawName = User.Identity?.Name ?? string.Empty;
+        var displayName = string.IsNullOrWhiteSpace(rawName)
+            ? "User"
+            : (rawName.Contains("@") ? rawName.Split('@')[0] : rawName);
+        var initials = string.Join(string.Empty, displayName
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => char.ToUpperInvariant(s[0])));
+        if (string.IsNullOrWhiteSpace(initials))
+        {
+            initials = displayName.Length >= 2 ? displayName.Substring(0, 2).ToUpperInvariant() : "U";
+        }
     }
 
     <div class="relative min-h-screen bg-gray-100">
@@ -103,9 +116,9 @@
                     <h1 class="text-xl font-semibold text-gray-800">@ViewData["Title"]</h1>
                 </div>
                 <div class="flex items-center">
-                    <span class="mr-3 text-sm font-medium text-gray-700">@(User.Identity.Name)</span>
+                    <span class="mr-3 text-sm font-medium text-gray-700">@displayName</span>
                     <div class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        AD
+                        @initials
                     </div>
                 </div>
             </header>
