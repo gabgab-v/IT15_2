@@ -34,12 +34,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label asp-for="LeaveRequest.StartDate" class="block text-sm font-medium text-gray-700"></label>
-                <input asp-for="LeaveRequest.StartDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                <input asp-for="LeaveRequest.StartDate" type="datetime-local" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 <span asp-validation-for="LeaveRequest.StartDate" class="text-red-600 text-sm"></span>
             </div>
             <div>
                 <label asp-for="LeaveRequest.EndDate" class="block text-sm font-medium text-gray-700"></label>
-                <input asp-for="LeaveRequest.EndDate" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                <input asp-for="LeaveRequest.EndDate" type="datetime-local" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 <span asp-validation-for="LeaveRequest.EndDate" class="text-red-600 text-sm"></span>
             </div>
         </div>

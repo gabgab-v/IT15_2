@@ -7,6 +7,8 @@ namespace IT15.ViewModels.HumanResource
         public IdentityUser Employee { get; set; }
         public int DaysPresent { get; set; }
         public int DaysAbsent { get; set; }
+        public decimal LeaveHours { get; set; }
+        public decimal AbsentHours { get; set; }
         public decimal ApprovedOvertimeHours { get; set; }
         public decimal ActualOvertimeHours { get; set; }
         public decimal OvertimePenaltyHours { get; set; }

@@ -43,12 +43,33 @@ namespace IT15.Services
                 decimal dailyRate = workingDaysInMonth > 0 ? basicSalary / workingDaysInMonth : 0;
                 decimal hourlyRate = dailyRate / 8;
 
-                // --- Attendance and Leave Calculation (remains the same) ---
-                var attendanceCount = await _context.DailyLogs.CountAsync(d => d.UserId == employee.Id && d.CheckInTime.Month == month.Month);
-                var approvedLeaves = await _context.LeaveRequests.CountAsync(l => l.RequestingEmployeeId == employee.Id && l.Status == LeaveRequestStatus.Approved && l.StartDate.Month == month.Month);
-                int daysPresent = attendanceCount + approvedLeaves;
-                int daysAbsent = workingDaysInMonth > daysPresent ? workingDaysInMonth - daysPresent : 0;
-                decimal absentDeductions = daysAbsent * dailyRate;
+                var monthStart = new DateTime(month.Year, month.Month, 1);
+                var monthEnd = monthStart.AddMonths(1);
+
+                // Attendance and Leave Calculation in hours
+                var attendanceCount = await _context.DailyLogs.CountAsync(d => d.UserId == employee.Id && d.CheckInTime >= monthStart && d.CheckInTime < monthEnd);
+                var attendanceHours = attendanceCount * 8m;
+
+                var approvedLeaves = await _context.LeaveRequests
+                    .Where(l => l.RequestingEmployeeId == employee.Id &&
+                                l.Status == LeaveRequestStatus.Approved &&
+                                l.EndDate >= monthStart &&
+                                l.StartDate < monthEnd)
+                    .ToListAsync();
+
+                decimal leaveHours = 0;
+                foreach (var leave in approvedLeaves)
+                {
+                    var effectiveStart = leave.StartDate < monthStart ? monthStart : leave.StartDate;
+                    var effectiveEnd = leave.EndDate > monthEnd ? monthEnd : leave.EndDate;
+                    leaveHours += Math.Max(0m, (decimal)(effectiveEnd - effectiveStart).TotalHours);
+                }
+
+                decimal workingHoursInMonth = workingDaysInMonth * 8m;
+                decimal absentHours = Math.Max(0m, workingHoursInMonth - attendanceHours - leaveHours);
+                int daysPresent = attendanceCount;
+                int daysAbsent = (int)Math.Ceiling(absentHours / 8m);
+                decimal absentDeductions = (absentHours / 8m) * dailyRate;
 
                 // --- NEW OVERTIME AND PENALTY LOGIC ---
                 decimal totalOvertimePay = 0;
@@ -102,6 +123,8 @@ namespace IT15.Services
                 {
                     EmployeeId = employee.Id,
                     DaysAbsent = daysAbsent,
+                    LeaveHours = leaveHours,
+                    AbsentHours = absentHours,
                     BasicSalary = basicSalary,
                     OvertimePay = totalOvertimePay,
                     DailyRate = dailyRate,

@@ -597,16 +597,16 @@ namespace IT15.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userProfile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
             int availableDays = userProfile?.LeaveBalance ?? 0;
+            var requestedHours = (leaveRequest.EndDate - leaveRequest.StartDate).TotalHours;
+            var availableHours = availableDays * 8;
 
-            var requestedDays = (leaveRequest.EndDate - leaveRequest.StartDate).Days + 1;
-
-            if (requestedDays <= 0)
+            if (requestedHours <= 0)
             {
-                ModelState.AddModelError("LeaveRequest.EndDate", "End date must be on or after the start date.");
+                ModelState.AddModelError("LeaveRequest.EndDate", "End time must be after the start time.");
             }
-            if (requestedDays > availableDays)
+            if (requestedHours > availableHours)
             {
-                ModelState.AddModelError("LeaveRequest.EndDate", $"You cannot request {requestedDays} days. You only have {availableDays} leave days available.");
+                ModelState.AddModelError("LeaveRequest.EndDate", $"You cannot request {(requestedHours / 8m):F1} days. You only have {availableDays} leave days (approx. {availableHours} hours) available.");
             }
 
             if (ModelState.IsValid)

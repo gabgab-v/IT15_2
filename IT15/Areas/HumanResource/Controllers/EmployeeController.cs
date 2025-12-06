@@ -52,14 +52,27 @@ namespace IT15.Areas.HumanResource.Controllers
                 .ToListAsync();
 
             var approvedLeaves = await _context.LeaveRequests
-                .CountAsync(l => l.RequestingEmployeeId == id && l.Status == LeaveRequestStatus.Approved && l.StartDate >= startOfMonth && l.StartDate < endOfMonth);
+                .Where(l => l.RequestingEmployeeId == id && l.Status == LeaveRequestStatus.Approved && l.EndDate >= startOfMonth && l.StartDate < endOfMonth)
+                .ToListAsync();
 
-            int daysPresent = attendanceLogs.Count + approvedLeaves;
-            int daysAbsent = daysInMonth > daysPresent ? daysInMonth - daysPresent : 0;
+            decimal leaveHours = 0;
+            foreach (var leave in approvedLeaves)
+            {
+                var effectiveStart = leave.StartDate < startOfMonth ? startOfMonth : leave.StartDate;
+                var effectiveEnd = leave.EndDate > endOfMonth ? endOfMonth : leave.EndDate;
+                leaveHours += Math.Max(0m, (decimal)(effectiveEnd - effectiveStart).TotalHours);
+            }
+
+            decimal attendanceHours = attendanceLogs.Count * 8m;
+            decimal workingHoursInMonth = daysInMonth * 8m;
+            decimal absentHours = Math.Max(0m, workingHoursInMonth - attendanceHours - leaveHours);
+
+            int daysPresent = attendanceLogs.Count;
+            int daysAbsent = (int)Math.Ceiling(absentHours / 8m);
 
             decimal basicSalary = 20000;
             decimal dailyRate = daysInMonth > 0 ? basicSalary / daysInMonth : 0;
-            decimal absentDeductions = daysAbsent * dailyRate;
+            decimal absentDeductions = (absentHours / 8m) * dailyRate;
             decimal hourlyRate = dailyRate / 8;
 
             decimal totalOvertimePay = 0;
@@ -107,6 +120,8 @@ namespace IT15.Areas.HumanResource.Controllers
                 Employee = employee,
                 DaysPresent = daysPresent,
                 DaysAbsent = daysAbsent,
+                LeaveHours = leaveHours,
+                AbsentHours = absentHours,
                 ApprovedOvertimeHours = totalApprovedOvertimeHours,
                 ActualOvertimeHours = totalActualOvertimeHours,
                 OvertimePenaltyHours = totalPenaltyHours,

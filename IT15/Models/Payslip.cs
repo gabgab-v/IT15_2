@@ -40,6 +40,12 @@ namespace IT15.Models
         public int WorkingDaysInMonth { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]
+        public decimal LeaveHours { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal AbsentHours { get; set; }
+
+        [Column(TypeName = "decimal(18, 2)")]
         public decimal OvertimeHours { get; set; }
 
         [Column(TypeName = "decimal(18, 2)")]

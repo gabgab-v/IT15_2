@@ -25,6 +25,10 @@
         <p class="text-2xl font-bold text-gray-900">@Model.DaysAbsent</p>
     </div>
     <div class="bg-white p-4 rounded-lg shadow-sm border">
+        <p class="text-sm font-medium text-gray-500">Leave Hours</p>
+        <p class="text-2xl font-bold text-gray-900">@Model.LeaveHours.ToString("F1")</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow-sm border">
         <p class="text-sm font-medium text-gray-500">Approved OT (Hours)</p>
         <p class="text-2xl font-bold text-gray-900">@Model.ApprovedOvertimeHours.ToString("F2")</p>
     </div>
@@ -36,6 +40,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
         <div class="flex justify-between"><span>Days Present:</span> <span>@Model.DaysPresent</span></div>
         <div class="flex justify-between"><span>Days Absent:</span> <span>@Model.DaysAbsent</span></div>
+        <div class="flex justify-between"><span>Leave Hours:</span> <span>@Model.LeaveHours.ToString("F1")</span></div>
+        <div class="flex justify-between"><span>Absent Hours:</span> <span>@Model.AbsentHours.ToString("F1")</span></div>
         <div class="flex justify-between"><span>Approved OT Hours:</span> <span>@Model.ApprovedOvertimeHours.ToString("F2")</span></div>
         <div class="flex justify-between"><span>Actual OT Hours:</span> <span>@Model.ActualOvertimeHours.ToString("F2")</span></div>
         <div class="flex justify-between"><span>Penalty Hours:</span> <span>@Model.OvertimePenaltyHours.ToString("F2")</span></div>
@@ -72,7 +78,7 @@
         <!-- Deductions -->
         <div class="space-y-3">
             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Projected Deductions</h4>
-            <div class="flex justify-between text-sm"><span>Absenteeism (@Model.DaysAbsent day(s) × @Model.DailyRate.ToString("C", culture)):</span> <span>- @Model.AbsentDeductions.ToString("C", culture)</span></div>
+            <div class="flex justify-between text-sm"><span>Absenteeism (@Model.AbsentHours.ToString("F1") h × @Model.HourlyRate.ToString("C", culture)):</span> <span>- @Model.AbsentDeductions.ToString("C", culture)</span></div>
             <!-- THE CHANGE: Added a line to display the new Overtime Penalty -->
             <div class="flex justify-between text-sm text-red-600">
                 <span>Overtime Penalty (@Model.OvertimePenaltyHours.ToString("F2") h × @Model.HourlyRate.ToString("C", culture)):</span>

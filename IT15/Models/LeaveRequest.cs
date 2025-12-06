@@ -31,13 +31,13 @@ namespace IT15.Models
         // --- Leave Details ---
 
         [Required]
-        [Display(Name = "Start Date")]
-        [DataType(DataType.Date)]
+        [Display(Name = "Start")]
+        [DataType(DataType.DateTime)]
         public DateTime StartDate { get; set; }
 
         [Required]
-        [Display(Name = "End Date")]
-        [DataType(DataType.Date)]
+        [Display(Name = "End")]
+        [DataType(DataType.DateTime)]
         public DateTime EndDate { get; set; }
 
         [Required]
@@ -54,6 +54,9 @@ namespace IT15.Models
         public DateTime? DateActioned { get; set; }
 
         public LeaveRequestStatus Status { get; set; }
+
+        [NotMapped]
+        public decimal LeaveHours => Math.Max(0, (decimal)(EndDate - StartDate).TotalHours);
     }
 }
 
