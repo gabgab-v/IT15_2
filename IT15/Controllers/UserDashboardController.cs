@@ -893,18 +893,53 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> PaySlips()
+        public async Task<IActionResult> PaySlips(string search, DateTime? startDate, DateTime? endDate)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var paySlips = await _context.PaySlips
-            .Include(p => p.Payroll)
-            .Include(p => p.Employee)
-            .Where(p => p.EmployeeId == userId)
-            .OrderByDescending(p => p.Payroll.PayrollMonth)
-            .ToListAsync();
+
+            ViewData["Search"] = search;
+            ViewData["StartDate"] = startDate?.ToString("yyyy-MM");
+            ViewData["EndDate"] = endDate?.ToString("yyyy-MM");
+
+            var query = _context.PaySlips
+                .Include(p => p.Payroll)
+                .Include(p => p.Employee)
+                .Where(p => p.EmployeeId == userId);
+
+            if (startDate.HasValue)
+            {
+                var start = new DateTime(startDate.Value.Year, startDate.Value.Month, 1);
+                query = query.Where(p => p.Payroll.PayrollMonth >= start);
+            }
+
+            if (endDate.HasValue)
+            {
+                var end = new DateTime(endDate.Value.Year, endDate.Value.Month, 1).AddMonths(1);
+                query = query.Where(p => p.Payroll.PayrollMonth < end);
+            }
+
+            var paySlips = await query
+                .OrderByDescending(p => p.Payroll.PayrollMonth)
+                .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                paySlips = paySlips
+                    .Where(p =>
+                    {
+                        var period = p.Payroll?.PayrollMonth.ToString("MMMM yyyy", CultureInfo.InvariantCulture) ?? string.Empty;
+                        var userName = p.Employee?.UserName ?? string.Empty;
+                        var email = p.Employee?.Email ?? string.Empty;
+                        return period.Contains(term, StringComparison.OrdinalIgnoreCase)
+                               || userName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                               || email.Contains(term, StringComparison.OrdinalIgnoreCase);
+                    })
+                    .ToList();
+            }
+
             return View(paySlips);
         }
         #endregion
     }
 }
-
