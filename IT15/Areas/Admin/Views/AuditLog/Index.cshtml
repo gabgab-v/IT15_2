@@ -1,38 +1,118 @@
-﻿    @model IEnumerable<IT15.Models.AuditLog>
+﻿@model IEnumerable<IT15.Models.AuditLog>
+@using System
+@using System.Collections.Generic
 
 @{
     ViewData["Title"] = "System Audit Log";
+    var logs = Model?.ToList() ?? new List<IT15.Models.AuditLog>();
+    var search = ViewData["Search"] as string ?? string.Empty;
+    var selectedAction = ViewData["ActionType"] as string ?? string.Empty;
+    var startDate = ViewData["StartDate"] as string ?? string.Empty;
+    var endDate = ViewData["EndDate"] as string ?? string.Empty;
+    var actionTypes = ViewData["ActionTypes"] as List<string> ?? new List<string>();
+    var maxRows = ViewData["MaxRows"] as int? ?? 200;
 }
 
-<h2 class="text-2xl font-bold text-gray-900 mb-4">System Audit Log</h2>
-<p class="text-gray-600 mb-6">A record of all important activities that have occurred in the system.</p>
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">System Audit Log</h2>
+        <p class="text-gray-600 mt-1">A record of all important activities that have occurred in the system.</p>
+    </div>
 
-<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @foreach (var log in Model)
-            {
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@log.UserName</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@log.ActionType</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">@log.Details</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <form asp-area="Admin"
+                  asp-controller="AuditLog"
+                  asp-action="Index"
+                  method="get"
+                  class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label for="search" class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Keyword</label>
+                    <input type="text"
+                           id="search"
+                           name="search"
+                           value="@search"
+                           placeholder="Search by user, action, or details"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                    <label for="actionType" class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Action</label>
+                    <select id="actionType"
+                            name="actionType"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All actions</option>
+                        @foreach (var type in actionTypes)
+                        {
+                            var isSelected = string.Equals(type, selectedAction, StringComparison.OrdinalIgnoreCase);
+                            <option value="@type" selected="@(isSelected ? "selected" : null)">@type</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="startDate" class="text-xs font-semibold text-gray-600 uppercase tracking-wide">From</label>
+                    <input type="date"
+                           id="startDate"
+                           name="startDate"
+                           value="@startDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                    <label for="endDate" class="text-xs font-semibold text-gray-600 uppercase tracking-wide">To</label>
+                    <input type="date"
+                           id="endDate"
+                           name="endDate"
+                           value="@endDate"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="md:col-span-5 flex flex-wrap items-center gap-3 pt-1">
+                    <button type="submit" class="bg-blue-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Apply Filters
+                    </button>
+                    <a asp-area="Admin"
+                       asp-controller="AuditLog"
+                       asp-action="Index"
+                       class="text-sm font-medium text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50">
+                        Reset
+                    </a>
+                    <span class="text-sm text-gray-500 ml-auto">Showing @logs.Count log(s)@(logs.Count == maxRows ? $" (first {maxRows})" : string.Empty)</span>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if (!logs.Any())
+                    {
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
+                                No audit logs found for the selected filters.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var log in logs)
+                        {
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@(!string.IsNullOrEmpty(log.UserName) ? log.UserName : "System")</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">@log.ActionType</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">@log.Details</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-<a asp-area="Admin" asp-controller="AuditLog" asp-action="Index" class="flex items-center ...">
-    <i data-lucide="history" class="w-5 h-5 mr-3"></i>
-    Audit Log
-</a>
 
