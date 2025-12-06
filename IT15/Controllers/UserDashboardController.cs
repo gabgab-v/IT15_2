@@ -606,7 +606,7 @@ namespace IT15.Controllers
             }
             if (requestedHours > availableHours)
             {
-                ModelState.AddModelError("LeaveRequest.EndDate", $"You cannot request {(requestedHours / 8m):F1} days. You only have {availableDays} leave days (approx. {availableHours} hours) available.");
+                ModelState.AddModelError("LeaveRequest.EndDate", $"You cannot request {(decimal)requestedHours / 8m:F1} days. You only have {availableDays} leave days (approx. {availableHours} hours) available.");
             }
 
             if (ModelState.IsValid)
