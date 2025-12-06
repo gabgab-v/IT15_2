@@ -73,7 +73,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mb-2">Revenue Margin: @Model.RevenueMarginPercent%</p>
 
-                        <form asp-action="RecordSale" asp-controller="UserDashboard" method="post" class="mt-auto space-y-3">
+                        <form asp-action="RecordSale" asp-controller="UserDashboard" method="post" class="mt-auto space-y-3 record-sale-form">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="productName" value="@item.Product.Title" />
                             <input type="hidden" name="price" value="@item.Product.Price" />
@@ -125,6 +125,17 @@
                                 input.value = currentValue - 1;
                             }
                         }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.record-sale-form').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    const productName = this.querySelector('input[name="productName"]')?.value || 'this product';
+                    const quantity = this.querySelector('input[name="quantity"]')?.value || '1';
+                    const confirmed = confirm(`Record sale of ${quantity} x ${productName}?`);
+                    if (!confirmed) {
+                        e.preventDefault();
                     }
                 });
             });

@@ -799,8 +799,10 @@ namespace IT15.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SupplyCatalog()
+        public async Task<IActionResult> SupplyCatalog(string search)
         {
+            ViewData["Search"] = search;
+
             // THE FIX: We now explicitly format the currency using the correct culture.
             var culture = new CultureInfo("en-PH");
             var deliveryServices = await _context.DeliveryServices
@@ -810,12 +812,52 @@ namespace IT15.Controllers
                     Text = $"{d.Name} - {d.Fee.ToString("C", culture)}"
                 }).ToListAsync();
 
+            var products = await _incomeApiService.GetProductsAsync();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                products = products
+                    .Where(p => p.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             var model = new SupplyCatalogViewModel
             {
-                Products = await _incomeApiService.GetProductsAsync(),
+                Products = products,
                 DeliveryServices = deliveryServices
             };
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelSupplyRequest(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var request = await _context.SupplyRequests
+                .Include(r => r.Supply)
+                .FirstOrDefaultAsync(r => r.Id == id && r.RequestingEmployeeId == userId);
+
+            if (request == null)
+            {
+                TempData["ErrorMessage"] = "Request not found or already processed.";
+                return RedirectToAction(nameof(MyRequests));
+            }
+
+            if (request.Status != SupplyRequestStatus.Pending)
+            {
+                TempData["ErrorMessage"] = "Only pending requests can be cancelled.";
+                return RedirectToAction(nameof(MyRequests));
+            }
+
+            request.Status = SupplyRequestStatus.Denied;
+            await _context.SaveChangesAsync();
+
+            var userName = User.Identity?.Name ?? "User";
+            await _auditService.LogAsync(userId, userName, "Supply Request Cancelled", $"User '{userName}' cancelled supply request #{request.Id} for '{request.Supply?.Name ?? "unknown supply"}'.");
+
+            TempData["SuccessMessage"] = "Supply request cancelled.";
+            return RedirectToAction(nameof(MyRequests));
         }
 
         [HttpPost]
