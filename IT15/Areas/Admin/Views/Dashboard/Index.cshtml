@@ -6,15 +6,14 @@
 
 <div class="border-b border-gray-200 pb-4 mb-6">
     <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-    <p class="text-gray-500 mt-1">A summary of key metrics for today, @DateTime.Now.ToString("dddd, MMMM dd, yyyy").</p>
+    <p class="text-gray-500 mt-1">Live snapshot of people, approvals, and finances.</p>
     <p class="text-gray-500 text-sm mt-1 flex items-center space-x-2">
         <i data-lucide="clock" class="w-4 h-4"></i>
         <span id="admin-current-time">--:-- --</span>
     </p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Stat Card 1: Total Employees -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="flex items-center">
             <div class="bg-blue-100 p-3 rounded-full">
@@ -26,8 +25,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Stat Card 2: Attended Today -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="flex items-center">
             <div class="bg-green-100 p-3 rounded-full">
@@ -39,8 +36,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Stat Card 3: On Leave Today -->
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="flex items-center">
             <div class="bg-yellow-100 p-3 rounded-full">
@@ -50,6 +45,78 @@
                 <p class="text-sm font-medium text-gray-500">On Leave Today</p>
                 <p class="text-2xl font-bold text-gray-900">@Model.UsersOnLeaveToday</p>
             </div>
+        </div>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center">
+            <div class="bg-indigo-100 p-3 rounded-full">
+                <i data-lucide="bell-dot" class="w-6 h-6 text-indigo-600"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Pending Approvals</p>
+                <p class="text-2xl font-bold text-gray-900">@(@Model.PendingSupplyRequests + @Model.PendingLeaveRequests + @Model.PendingOvertimeRequests)</p>
+                <p class="text-xs text-gray-500">Supply: @Model.PendingSupplyRequests · Leave: @Model.PendingLeaveRequests · OT: @Model.PendingOvertimeRequests</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Financial Snapshot (This Month)</h3>
+                <p class="text-sm text-gray-500">Income vs expenses from the ledger.</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-4 border rounded-lg flex items-center">
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <i data-lucide="trending-up" class="w-6 h-6 text-blue-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Sales Income</p>
+                    <p class="text-2xl font-bold text-gray-900">@Model.SalesThisMonth.ToString("C")</p>
+                </div>
+            </div>
+            <div class="p-4 border rounded-lg flex items-center">
+                <div class="bg-red-100 p-3 rounded-full">
+                    <i data-lucide="trending-down" class="w-6 h-6 text-red-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Expenses</p>
+                    <p class="text-2xl font-bold text-gray-900">@Model.ExpensesThisMonth.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Recent Activity</h3>
+                <p class="text-sm text-gray-500">Latest audit log entries.</p>
+            </div>
+        </div>
+        <div class="space-y-3">
+            @if (Model.RecentAuditLogs.Any())
+            {
+                foreach (var log in Model.RecentAuditLogs)
+                {
+                    <div class="flex items-start space-x-3">
+                        <div class="mt-1 w-2 h-2 rounded-full bg-blue-500"></div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">@log.ActionType</p>
+                            <p class="text-sm text-gray-600">@log.Details</p>
+                            <p class="text-xs text-gray-400">@log.Timestamp · @log.UserName</p>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-sm text-gray-500">No recent activity.</p>
+            }
         </div>
     </div>
 </div>

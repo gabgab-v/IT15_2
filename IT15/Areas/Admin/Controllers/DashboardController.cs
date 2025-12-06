@@ -27,6 +27,7 @@ namespace IT15.Areas.Admin.Controllers
         public async Task<IActionResult> Index()
         {
             var today = DateTime.UtcNow.Date;
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
 
             var viewModel = new DashboardViewModel
             {
@@ -38,8 +39,40 @@ namespace IT15.Areas.Admin.Controllers
                 UsersOnLeaveToday = await _context.LeaveRequests
                     .CountAsync(req => req.Status == LeaveRequestStatus.Approved &&
                                        today >= req.StartDate.Date &&
-                                       today <= req.EndDate.Date)
+                                       today <= req.EndDate.Date),
+
+                PendingSupplyRequests = await _context.SupplyRequests
+                    .CountAsync(r => r.Status == SupplyRequestStatus.Pending),
+
+                PendingLeaveRequests = await _context.LeaveRequests
+                    .CountAsync(r => r.Status == LeaveRequestStatus.Pending),
+
+                PendingOvertimeRequests = await _context.OvertimeRequests
+                    .CountAsync(r => r.Status == OvertimeStatus.PendingApproval),
+
+                SalesThisMonth = await _context.CompanyLedger
+                    .Where(t => t.EntryType == LedgerEntryType.Income &&
+                                t.Category == LedgerEntryCategory.Sales &&
+                                t.TransactionDate >= startOfMonth)
+                    .SumAsync(t => (decimal?)t.Amount) ?? 0m,
+
+                ExpensesThisMonth = await _context.CompanyLedger
+                    .Where(t => t.EntryType == LedgerEntryType.Expense &&
+                                t.TransactionDate >= startOfMonth)
+                    .SumAsync(t => (decimal?)t.Amount) ?? 0m
             };
+
+            viewModel.RecentAuditLogs = await _context.AuditLogs
+                .OrderByDescending(a => a.Timestamp)
+                .Take(6)
+                .Select(a => new RecentAuditLog
+                {
+                    Timestamp = a.Timestamp.ToString("MMM dd, HH:mm"),
+                    UserName = string.IsNullOrEmpty(a.UserName) ? "System" : a.UserName,
+                    ActionType = a.ActionType,
+                    Details = a.Details
+                })
+                .ToListAsync();
 
             return View(viewModel);
         }
