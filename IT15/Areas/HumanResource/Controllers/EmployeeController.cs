@@ -29,9 +29,22 @@ namespace IT15.Areas.HumanResource.Controllers
         }
 
         // GET: /HumanResource/Employee
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var employees = await _userManager.GetUsersInRoleAsync("User");
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                employees = employees
+                    .Where(u =>
+                        (!string.IsNullOrEmpty(u.Email) && u.Email.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(u.UserName) && u.UserName.ToLowerInvariant().Contains(term)))
+                    .ToList();
+            }
+
             return View(employees);
         }
 
@@ -147,8 +160,10 @@ namespace IT15.Areas.HumanResource.Controllers
         // --- Actions for Managing Leave Balances ---
 
         [HttpGet]
-        public async Task<IActionResult> LeaveBalances()
+        public async Task<IActionResult> LeaveBalances(string search)
         {
+            ViewData["Search"] = search;
+
             var employees = await _userManager.GetUsersInRoleAsync("User");
             var userIds = employees.Select(e => e.Id).ToList();
 
@@ -172,6 +187,16 @@ namespace IT15.Areas.HumanResource.Controllers
                 Employee = emp,
                 CurrentLeaveBalance = userProfiles.TryGetValue(emp.Id, out var balance) ? balance : 0
             }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                viewModel = viewModel
+                    .Where(v =>
+                        (!string.IsNullOrEmpty(v.Employee.Email) && v.Employee.Email.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(v.Employee.UserName) && v.Employee.UserName.ToLowerInvariant().Contains(term)))
+                    .ToList();
+            }
 
             return View(viewModel);
         }

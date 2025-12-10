@@ -26,14 +26,27 @@ namespace IT15.Areas.Accounting.Controllers
         }
 
         // GET: /Accounting/Operations
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             // Fetch only operational costs (negative, not payroll or sales)
             var operationalCosts = await _context.CompanyLedger
                 .Include(c => c.User)
                 .Where(c => c.EntryType == LedgerEntryType.Expense && c.Category == LedgerEntryCategory.Operations)
                 .OrderByDescending(c => c.TransactionDate)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                operationalCosts = operationalCosts
+                    .Where(c =>
+                        (!string.IsNullOrEmpty(c.Description) && c.Description.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(c.Counterparty) && c.Counterparty.ToLowerInvariant().Contains(term)) ||
+                        c.TransactionDate.ToString("MMM yyyy").ToLowerInvariant().Contains(term))
+                    .ToList();
+            }
 
             return View(operationalCosts);
         }

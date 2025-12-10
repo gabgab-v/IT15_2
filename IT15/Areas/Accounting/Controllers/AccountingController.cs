@@ -36,13 +36,23 @@ namespace IT15.Areas.Accounting.Controllers
             _auditService = auditService; // Initialize the service
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var pendingPayrolls = await _context.Payrolls
                 .Include(p => p.PaySlips)
                 .Where(p => p.Status == PayrollStatus.PendingApproval && !p.IsArchived)
                 .OrderByDescending(p => p.PayrollMonth)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                pendingPayrolls = pendingPayrolls
+                    .Where(p => p.PayrollMonth.ToString("MMMM yyyy").ToLowerInvariant().Contains(term))
+                    .ToList();
+            }
 
             var approvalViewModels = new List<PayrollApprovalViewModel>();
 

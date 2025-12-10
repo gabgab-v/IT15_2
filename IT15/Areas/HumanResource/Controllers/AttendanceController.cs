@@ -27,13 +27,25 @@ namespace IT15.Areas.HumanResource.Controllers
         }
 
         // GET: /HumanResource/Attendance/Index
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var pendingRequests = await _context.OvertimeRequests
                 .Include(r => r.RequestingEmployee)
                 .Where(r => r.Status == OvertimeStatus.PendingApproval)
                 .OrderByDescending(r => r.DateRequested)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                pendingRequests = pendingRequests
+                    .Where(r =>
+                        (!string.IsNullOrEmpty(r.RequestingEmployee?.Email) && r.RequestingEmployee.Email.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(r.Reason) && r.Reason.ToLowerInvariant().Contains(term)))
+                    .ToList();
+            }
 
             return View(pendingRequests);
         }

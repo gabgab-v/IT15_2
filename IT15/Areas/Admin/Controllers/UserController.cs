@@ -28,8 +28,10 @@ namespace IT15.Areas.Admin.Controllers
         }
 
         // GET: /Admin/User (Shows only ACTIVE users)
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             // Get IDs of all archived users from their profiles
             var archivedUserIds = await _context.UserProfiles
                 .Where(p => p.IsArchived)
@@ -42,14 +44,28 @@ namespace IT15.Areas.Admin.Controllers
                 .ToListAsync();
 
             var userViewModels = new List<UserViewModel>();
+            var hasSearch = !string.IsNullOrWhiteSpace(search);
+            var term = search?.Trim().ToLowerInvariant();
+
             foreach (var user in users)
             {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (hasSearch)
+                {
+                    var emailMatch = (user.Email ?? string.Empty).ToLowerInvariant().Contains(term);
+                    var roleMatch = roles.Any(r => r.ToLowerInvariant().Contains(term));
+                    if (!emailMatch && !roleMatch)
+                    {
+                        continue;
+                    }
+                }
+
                 userViewModels.Add(new UserViewModel
                 {
                     Id = user.Id,
                     Email = user.Email,
                     EmailConfirmed = user.EmailConfirmed,
-                    Roles = await _userManager.GetRolesAsync(user)
+                    Roles = roles
                 });
             }
 

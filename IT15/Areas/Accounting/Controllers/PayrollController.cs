@@ -37,13 +37,24 @@ namespace IT15.Areas.Accounting.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var payrolls = await _context.Payrolls
                 .Include(p => p.PaySlips)
                 .ThenInclude(ps => ps.Employee)
                 .OrderByDescending(p => p.PayrollMonth)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                payrolls = payrolls
+                    .Where(p => p.PayrollMonth.ToString("MMMM yyyy").ToLowerInvariant().Contains(term) ||
+                                p.Status.ToString().ToLowerInvariant().Contains(term))
+                    .ToList();
+            }
             return View(payrolls);
         }
 

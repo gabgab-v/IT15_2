@@ -34,8 +34,10 @@ namespace IT15.Areas.Accounting.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var summary = await _analyticsService.GetPayablesSummaryAsync(DateTime.UtcNow);
             var payables = await _context.AccountsPayables
                 .Include(p => p.LedgerEntries)
@@ -65,6 +67,17 @@ namespace IT15.Areas.Accounting.Controllers
                     ExpenseCategory = p.ExpenseCategory
                 };
             }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                items = items
+                    .Where(i =>
+                        (!string.IsNullOrEmpty(i.SupplierName) && i.SupplierName.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(i.ReferenceNumber) && i.ReferenceNumber.ToLowerInvariant().Contains(term)) ||
+                        i.Status.ToString().ToLowerInvariant().Contains(term))
+                    .ToList();
+            }
 
             var model = new PayablesIndexViewModel
             {

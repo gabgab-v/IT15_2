@@ -31,12 +31,26 @@ namespace IT15.Areas.HumanResource.Controllers
             _auditService = auditService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string search)
         {
+            ViewData["Search"] = search;
+
             var pendingApplications = await _context.JobApplications
                 .Where(a => a.Status == ApplicationStatus.Pending)
                 .OrderBy(a => a.DateApplied)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                pendingApplications = pendingApplications
+                    .Where(a =>
+                        (!string.IsNullOrEmpty(a.Username) && a.Username.ToLowerInvariant().Contains(term)) ||
+                        (!string.IsNullOrEmpty(a.Email) && a.Email.ToLowerInvariant().Contains(term)) ||
+                        a.Status.ToString().ToLowerInvariant().Contains(term))
+                    .ToList();
+            }
+
             return View(pendingApplications);
         }
 
