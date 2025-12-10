@@ -19,6 +19,7 @@ namespace IT15.ViewModels
         // NEW: Property for leave balance, used on multiple pages
         [Display(Name = "Available Leave Days")]
         public int AvailableLeaveDays { get; set; }
+        public decimal AvailableLeaveHours => AvailableLeaveDays * 8;
 
         // Properties for the "Apply for Leave" page
         public LeaveRequest LeaveRequest { get; set; } = null!;

@@ -6,5 +6,6 @@ namespace IT15.ViewModels.HumanResource
     {
         public IdentityUser Employee { get; set; }
         public int CurrentLeaveBalance { get; set; }
+        public decimal CurrentLeaveHours => CurrentLeaveBalance * 8;
     }
 }

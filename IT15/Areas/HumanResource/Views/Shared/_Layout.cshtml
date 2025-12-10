@@ -33,7 +33,7 @@
                     <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
                     Leave Requests
                 </a>
-                <a asp-area="HumanResource" asp-controller="Employee" asp-action="LeaveBalances" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
+                <a asp-area="HumanResource" asp-controller="Employee" asp-action="LeaveBalances" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentAction, "LeaveBalances", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="award" class="w-5 h-5 mr-3"></i>
                     Leave Balances
                 </a>
@@ -42,7 +42,7 @@
                     <i data-lucide="clock" class="w-5 h-5 mr-3"></i> 
                     Overtime Approval 
                 </a>
-                <a asp-area="HumanResource" asp-controller="Employee" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @(string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
+                <a asp-area="HumanResource" asp-controller="Employee" asp-action="Index" class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg @((string.Equals(currentController, "Employee", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentAction, "LeaveBalances", StringComparison.OrdinalIgnoreCase)) ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100")">
                     <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                     Employee Overview
                 </a>
