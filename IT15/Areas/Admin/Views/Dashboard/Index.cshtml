@@ -91,6 +91,15 @@
                 </div>
             </div>
         </div>
+        <div class="mt-6">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-medium text-gray-700">6-month trend</p>
+                <p class="text-xs text-gray-500">Income vs expenses</p>
+            </div>
+            <div class="h-64">
+                <canvas id="financeChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -123,7 +132,46 @@
     </div>
 </div>
 
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Attendance (Last 7 days)</h3>
+                <p class="text-sm text-gray-500">Daily check-ins trend.</p>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Leave Pipeline</h3>
+                <p class="text-sm text-gray-500">Approved vs pending vs denied.</p>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="leaveStatusChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Approval Backlog</h3>
+                <p class="text-sm text-gray-500">Where requests are piling up.</p>
+            </div>
+        </div>
+        <div class="h-64">
+            <canvas id="approvalBacklogChart"></canvas>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById('admin-current-time');
@@ -134,6 +182,152 @@
             };
             update();
             setInterval(update, 1000);
+
+            const financeLabels = @Html.Raw(Json.Serialize(Model.FinanceChartLabels));
+            const financeIncome = @Html.Raw(Json.Serialize(Model.FinanceIncomeSeries));
+            const financeExpenses = @Html.Raw(Json.Serialize(Model.FinanceExpenseSeries));
+            const attendanceLabels = @Html.Raw(Json.Serialize(Model.AttendanceChartLabels));
+            const attendanceData = @Html.Raw(Json.Serialize(Model.AttendanceChartData));
+            const leaveLabels = @Html.Raw(Json.Serialize(Model.LeaveStatusLabels));
+            const leaveData = @Html.Raw(Json.Serialize(Model.LeaveStatusData));
+            const approvalLabels = @Html.Raw(Json.Serialize(Model.ApprovalBacklogLabels));
+            const approvalData = @Html.Raw(Json.Serialize(Model.ApprovalBacklogData));
+
+            const financeCtx = document.getElementById('financeChart');
+            if (financeCtx) {
+                new Chart(financeCtx, {
+                    type: 'line',
+                    data: {
+                        labels: financeLabels,
+                        datasets: [
+                            {
+                                label: 'Income',
+                                data: financeIncome,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                                borderWidth: 2,
+                                tension: 0.35,
+                                fill: true,
+                                pointRadius: 3
+                            },
+                            {
+                                label: 'Expenses',
+                                data: financeExpenses,
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                borderWidth: 2,
+                                tension: 0.35,
+                                fill: true,
+                                pointRadius: 3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => `₱${Number(value).toLocaleString()}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const attendanceCtx = document.getElementById('attendanceChart');
+            if (attendanceCtx) {
+                new Chart(attendanceCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: attendanceLabels,
+                        datasets: [{
+                            label: 'Check-ins',
+                            data: attendanceData,
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            borderColor: '#4f46e5',
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const leaveCtx = document.getElementById('leaveStatusChart');
+            if (leaveCtx) {
+                new Chart(leaveCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: leaveLabels,
+                        datasets: [{
+                            data: leaveData,
+                            backgroundColor: ['#f59e0b', '#22c55e', '#ef4444'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        cutout: '62%'
+                    }
+                });
+            }
+
+            const approvalCtx = document.getElementById('approvalBacklogChart');
+            if (approvalCtx) {
+                new Chart(approvalCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: approvalLabels,
+                        datasets: [{
+                            label: 'Pending',
+                            data: approvalData,
+                            backgroundColor: '#0ea5e9',
+                            borderRadius: 6,
+                            maxBarThickness: 28
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
         });
     </script>
 }

@@ -10,6 +10,15 @@
         public int PendingOvertimeRequests { get; set; }
         public decimal SalesThisMonth { get; set; }
         public decimal ExpensesThisMonth { get; set; }
+        public List<string> FinanceChartLabels { get; set; } = new();
+        public List<decimal> FinanceIncomeSeries { get; set; } = new();
+        public List<decimal> FinanceExpenseSeries { get; set; } = new();
+        public List<string> AttendanceChartLabels { get; set; } = new();
+        public List<int> AttendanceChartData { get; set; } = new();
+        public List<string> LeaveStatusLabels { get; set; } = new();
+        public List<int> LeaveStatusData { get; set; } = new();
+        public List<string> ApprovalBacklogLabels { get; set; } = new();
+        public List<int> ApprovalBacklogData { get; set; } = new();
         public IList<RecentAuditLog> RecentAuditLogs { get; set; } = new List<RecentAuditLog>();
     }
 
