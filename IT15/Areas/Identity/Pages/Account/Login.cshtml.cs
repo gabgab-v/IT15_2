@@ -81,29 +81,51 @@ namespace IT15.Areas.Identity.Pages.Account
 
                 var result = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                 var userAttemptingLogin = await _userManager.FindByNameAsync(userName);
+                var auditUserId = userAttemptingLogin?.Id ?? "N/A";
+                var userHasRestrictedRole = userAttemptingLogin != null &&
+                    (await _userManager.IsInRoleAsync(userAttemptingLogin, "Admin")
+                     || await _userManager.IsInRoleAsync(userAttemptingLogin, "HumanResource")
+                     || await _userManager.IsInRoleAsync(userAttemptingLogin, "Accounting"));
 
                 if (result.Succeeded)
                 {
+                    if (userHasRestrictedRole)
+                    {
+                        await _signInManager.SignOutAsync();
+                        _logger.LogWarning("Restricted role attempted to log into the employee portal: {UserName}", userName);
+                        await _auditService.LogAsync(auditUserId, userName, "User Login Failure", $"User '{userName}' with a restricted role attempted to log into the employee portal.");
+                        ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                        return Page();
+                    }
+
                     _logger.LogInformation("User logged in.");
-                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login Success", $"User '{userName}' logged in successfully.");
+                    await _auditService.LogAsync(auditUserId, userName, "User Login Success", $"User '{userName}' logged in successfully.");
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
                 {
-                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login 2FA Required", $"User '{userName}' login requires 2FA.");
+                    if (userHasRestrictedRole)
+                    {
+                        _logger.LogWarning("Restricted role requires 2FA but cannot access the employee portal: {UserName}", userName);
+                        await _auditService.LogAsync(auditUserId, userName, "User Login Failure", $"User '{userName}' with a restricted role attempted to log into the employee portal.");
+                        ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                        return Page();
+                    }
+
+                    await _auditService.LogAsync(auditUserId, userName, "User Login 2FA Required", $"User '{userName}' login requires 2FA.");
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
                 }
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
-                    await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Account Locked", $"User account '{userName}' is locked out.");
+                    await _auditService.LogAsync(auditUserId, userName, "User Account Locked", $"User account '{userName}' is locked out.");
                     return RedirectToPage("./Lockout");
                 }
                 else
                 {
                     if (userAttemptingLogin != null)
                     {
-                        await _auditService.LogAsync(userAttemptingLogin.Id, userName, "User Login Failure", $"Invalid password attempt for user '{userName}'.");
+                        await _auditService.LogAsync(auditUserId, userName, "User Login Failure", $"Invalid password attempt for user '{userName}'.");
                     }
                     else
                     {
