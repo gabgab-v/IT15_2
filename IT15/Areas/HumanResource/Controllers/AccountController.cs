@@ -48,7 +48,7 @@ namespace IT15.Areas.HumanResource.Controllers
                 {
                     
                     // Now, verify the role after a successful password sign-in.
-                    if (user != null && (await _userManager.IsInRoleAsync(user, "HumanResource") || await _userManager.IsInRoleAsync(user, "Admin")))
+                    if (user != null && await _userManager.IsInRoleAsync(user, "HumanResource"))
                     {
                         _logger.LogInformation("HR user logged in.");
                         await _auditService.LogAsync(user.Id, user.UserName, "HR Login Success", $"User '{user.UserName}' logged into the HR Panel.");
@@ -68,6 +68,18 @@ namespace IT15.Areas.HumanResource.Controllers
                 }
                 if (result.RequiresTwoFactor)
                 {
+                    if (user == null || !await _userManager.IsInRoleAsync(user, "HumanResource"))
+                    {
+                        await _signInManager.SignOutAsync();
+                        _logger.LogWarning("Unauthorized 2FA login attempt for HR Panel by user {Email}", model.Email);
+                        if (user != null)
+                        {
+                            await _auditService.LogAsync(user.Id, user.UserName, "HR Login Failure", $"User '{user.UserName}' failed to log into HR Panel (Insufficient Permissions).");
+                        }
+                        ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                        return View(model);
+                    }
+
                     _logger.LogInformation("User requires two-factor authentication.");
                     if (user != null)
                     {

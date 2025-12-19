@@ -48,7 +48,7 @@ namespace IT15.Areas.Accounting.Controllers
 
                 if (result.Succeeded)
                 {
-                    if (user != null && (await _userManager.IsInRoleAsync(user, "Accounting") || await _userManager.IsInRoleAsync(user, "Admin")))
+                    if (user != null && await _userManager.IsInRoleAsync(user, "Accounting"))
                     {
                         _logger.LogInformation("Accounting user logged in.");
                         // --- AUDIT LOG ---
@@ -69,6 +69,18 @@ namespace IT15.Areas.Accounting.Controllers
                 }
                 if (result.RequiresTwoFactor)
                 {
+                    if (user == null || !await _userManager.IsInRoleAsync(user, "Accounting"))
+                    {
+                        await _signInManager.SignOutAsync();
+                        _logger.LogWarning("Unauthorized 2FA login attempt for Accounting Panel by user {Email}", model.Email);
+                        if (user != null)
+                        {
+                            await _auditService.LogAsync(user.Id, user.UserName, "Accounting Login Failure", $"User '{user.UserName}' failed to log into Accounting Panel (Insufficient Permissions).");
+                        }
+                        ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                        return View(model);
+                    }
+
                     _logger.LogInformation("User requires two-factor authentication.");
                     // --- AUDIT LOG ---
                     if (user != null)

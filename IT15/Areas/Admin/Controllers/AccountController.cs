@@ -11,11 +11,13 @@ namespace IT15.Areas.Admin.Controllers
     public class AccountController : Controller
     {
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(SignInManager<IdentityUser> signInManager, ILogger<AccountController> logger)
+        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -36,24 +38,37 @@ namespace IT15.Areas.Admin.Controllers
 
             if (ModelState.IsValid)
             {
-                // THE CHANGE: Use lockoutOnFailure: true for better security
+                var user = await _userManager.FindByEmailAsync(model.Email);
+
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User logged in successfully.");
-                    return LocalRedirect(returnUrl);
+                    if (user != null && await _userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        _logger.LogInformation("User logged in successfully.");
+                        return LocalRedirect(returnUrl);
+                    }
+
+                    await _signInManager.SignOutAsync();
+                    _logger.LogWarning("Unauthorized login attempt to Admin area for user {Email}", model.Email);
+                    ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                    return View(model);
                 }
 
-                // THE CHANGE: Check if the login result requires 2FA
                 if (result.RequiresTwoFactor)
                 {
+                    if (user == null || !await _userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        _logger.LogWarning("Unauthorized login attempt requiring 2FA to Admin area for user {Email}", model.Email);
+                        ModelState.AddModelError(string.Empty, "You do not have permission to access this area.");
+                        return View(model);
+                    }
+
                     _logger.LogInformation("User requires two-factor authentication.");
-                    // Redirect to the central Identity page to enter the 2FA code
                     return RedirectToPage("/Account/LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe, Area = "Identity" });
                 }
 
-                // THE CHANGE: Check if the account is locked out
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
