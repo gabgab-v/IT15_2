@@ -150,6 +150,9 @@
                                     <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Net Pay:</span> <span>@slip.NetPay.ToString("C", culture)</span></div>
                                 </div>
                             </div>
+                            <div class="print-metadata mt-6 text-xs text-gray-500 flex justify-end">
+                                <span>Printed on: <span data-print-timestamp>-</span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,15 +188,38 @@
                 width: 100%;
             }
         }
+
+        .printable-content .print-metadata {
+            display: none;
+        }
+
+        .printable-content.print-area .print-metadata,
+        .printable-content.show-print-metadata .print-metadata {
+            display: block;
+        }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const formatPrintTimestamp = () => {
+                const now = new Date();
+                return now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+            };
+
+            const stampPrintTimestamp = (section) => {
+                if (!section) return;
+                const stampEl = section.querySelector('[data-print-timestamp]');
+                if (stampEl) {
+                    stampEl.textContent = formatPrintTimestamp();
+                }
+            };
+
             document.querySelectorAll('.print-button').forEach(button => {
                 button.addEventListener('click', function () {
                     const payslipId = this.dataset.payslipid;
                     const printSection = document.getElementById(payslipId);
                     if (printSection) {
+                        stampPrintTimestamp(printSection);
                         printSection.classList.add('print-area');
                         window.print();
                         printSection.classList.remove('print-area');
@@ -208,15 +234,33 @@
                     const contentToExport = document.getElementById(payslipId);
 
                     if (contentToExport) {
-                        html2canvas(contentToExport).then(canvas => {
+                        stampPrintTimestamp(contentToExport);
+                        contentToExport.classList.add('show-print-metadata');
+                        html2canvas(contentToExport, { scale: 2 }).then(canvas => {
                             const imgData = canvas.toDataURL('image/png');
                             const { jsPDF } = window.jspdf;
                             const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
                             const imgProps = pdf.getImageProperties(imgData);
                             const pdfWidth = pdf.internal.pageSize.getWidth();
                             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                            const pageHeight = pdf.internal.pageSize.getHeight();
+
+                            let heightLeft = pdfHeight;
+                            let position = 0;
+
+                            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                            heightLeft -= pageHeight;
+
+                            while (heightLeft > 0) {
+                                position -= pageHeight;
+                                pdf.addPage();
+                                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                                heightLeft -= pageHeight;
+                            }
+
                             pdf.save(filename);
+                        }).finally(() => {
+                            contentToExport.classList.remove('show-print-metadata');
                         });
                     }
                 });

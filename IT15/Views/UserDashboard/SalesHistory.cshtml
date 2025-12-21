@@ -115,6 +115,9 @@
                 }
             </tbody>
         </table>
+        <div class="print-metadata mt-4 text-xs text-gray-500 flex justify-end">
+            <span>Printed on: <span data-print-timestamp>-</span></span>
+        </div>
     </div>
 </div>
 
@@ -143,14 +146,37 @@
                 width: 100%;
             }
         }
+
+        #sales-report-content .print-metadata {
+            display: none;
+        }
+
+        #sales-report-content.print-area .print-metadata,
+        #sales-report-content.show-print-metadata .print-metadata {
+            display: flex;
+        }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const formatPrintTimestamp = () => {
+                const now = new Date();
+                return now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+            };
+
+            const stampPrintTimestamp = (section) => {
+                if (!section) return;
+                const stampEl = section.querySelector('[data-print-timestamp]');
+                if (stampEl) {
+                    stampEl.textContent = formatPrintTimestamp();
+                }
+            };
+
             // Print Logic
             document.getElementById('print-report-button').addEventListener('click', function () {
                 const reportContent = document.getElementById('sales-report-content');
                 if (reportContent) {
+                    stampPrintTimestamp(reportContent);
                     reportContent.classList.add('print-area');
                     window.print();
                     reportContent.classList.remove('print-area');
@@ -160,43 +186,37 @@
             // PDF Export Logic
             document.getElementById('export-pdf-button').addEventListener('click', function () {
                 const contentToExport = document.getElementById('sales-report-content');
-                const reportTitle = "Sales Report";
-                const filterStartDate = "@Model.StartDate?.ToString("MMM dd, yyyy")" || "N/A";
-                const filterEndDate = "@Model.EndDate?.ToString("MMM dd, yyyy")" || "N/A";
 
                 if (contentToExport) {
-                    // Temporarily create a clean version for export
-                    const exportContainer = document.createElement('div');
-                    exportContainer.className = 'p-8 max-w-4xl';
-                    exportContainer.innerHTML = `
-                                        <div class="text-center border-b pb-4 mb-6">
-                                            <h1 class="text-2xl font-bold text-gray-800">OpenBook HRIS</h1>
-                                            <p class="text-gray-500">${reportTitle}</p>
-                                            <p class="text-sm text-gray-500 mt-1">Date Range: ${filterStartDate} - ${filterEndDate}</p>
-                                        </div>
-                                        ${contentToExport.innerHTML}
-                                    `;
+                    stampPrintTimestamp(contentToExport);
+                    contentToExport.classList.add('show-print-metadata');
 
-                    // Add it to the body off-screen to be rendered
-                    exportContainer.style.position = 'absolute';
-                    exportContainer.style.left = '-9999px';
-                    document.body.appendChild(exportContainer);
-
-                    html2canvas(exportContainer, { scale: 2 }).then(canvas => {
+                    html2canvas(contentToExport, { scale: 2 }).then(canvas => {
                         const imgData = canvas.toDataURL('image/png');
                         const { jsPDF } = window.jspdf;
                         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
-                        const margin = 10;
-                        const pdfWidth = pdf.internal.pageSize.getWidth() - (margin * 2);
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
                         const imgProps = pdf.getImageProperties(imgData);
                         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        const pageHeight = pdf.internal.pageSize.getHeight();
 
-                        pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight);
+                        let heightLeft = pdfHeight;
+                        let position = 0;
+
+                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                        heightLeft -= pageHeight;
+
+                        while (heightLeft > 0) {
+                            position -= pageHeight;
+                            pdf.addPage();
+                            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+                            heightLeft -= pageHeight;
+                        }
+
                         pdf.save('Sales-Report.pdf');
-
-                        // Clean up the temporary element
-                        document.body.removeChild(exportContainer);
+                    }).finally(() => {
+                        contentToExport.classList.remove('show-print-metadata');
                     });
                 }
             });
