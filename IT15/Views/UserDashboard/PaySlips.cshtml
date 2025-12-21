@@ -89,8 +89,23 @@
 
                     <!-- Printable Payslip Details -->
                     <div id="payslip-@slip.Id" class="printable-content">
-                        <!-- THE FIX: Added the detailed payslip content here -->
-                        <div class="mt-6 space-y-3">
+                        <div class="print-surface">
+                            <div class="print-header mb-6 border-b pb-4">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-sm font-semibold text-gray-700">OpenBook HRIS</div>
+                                        <div class="text-lg font-bold text-gray-900">Payslip - @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</div>
+                                        <div class="text-sm text-gray-600">Employee: @(slip.Employee?.UserName ?? slip.Employee?.Email ?? "N/A")</div>
+                                    </div>
+                                    <div class="text-xs text-gray-500 text-right">
+                                        <div>Printed on</div>
+                                        <div class="font-medium" data-print-timestamp>-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- THE FIX: Added the detailed payslip content here -->
+                            <div class="mt-6 space-y-3">
                             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Salary Basis</h4>
                             <div class="flex justify-between text-sm"><span>Monthly Salary:</span> <span>@slip.BasicSalary.ToString("C", culture)</span></div>
                             <div class="flex justify-between text-sm"><span>Working Days (Month):</span> <span>@slip.WorkingDaysInMonth</span></div>
@@ -99,16 +114,16 @@
                             <div class="flex justify-between text-sm text-green-600"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
                         </div>
 
-                        <div class="mt-6 space-y-3">
+                            <div class="mt-6 space-y-3">
                             <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Attendance Summary</h4>
                         <div class="flex justify-between text-sm"><span>Days Present:</span> <span>@daysPresent</span></div>
                         <div class="flex justify-between text-sm"><span>Days Absent:</span> <span>@slip.DaysAbsent</span></div>
                         <div class="flex justify-between text-sm"><span>Leave Hours:</span> <span>@slip.LeaveHours.ToString("F1")</span></div>
                         <div class="flex justify-between text-sm"><span>Actual OT Hours:</span> <span>@slip.OvertimeHours.ToString("F2")</span></div>
                         <div class="flex justify-between text-sm"><span>Penalty Hours:</span> <span>@slip.OvertimePenaltyHours.ToString("F2")</span></div>
-                        </div>
+                            </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
                             <!-- Earnings Column -->
                             <div class="space-y-3">
                                 <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Earnings</h4>
@@ -123,7 +138,7 @@
                             </div>
 
                             <!-- Deductions Column -->
-                            <div class="space-y-3">
+                                <div class="space-y-3">
                                 <h4 class="text-lg font-semibold text-gray-700 border-b pb-2">Deductions</h4>
                             <div class="flex justify-between text-sm"><span>Absenteeism (@slip.AbsentHours.ToString("F1") h × @slip.HourlyRate.ToString("C", culture)):</span> <span>- @slip.AbsentDeductions.ToString("C", culture)</span></div>
                                 <div class="flex justify-between text-sm text-red-600">
@@ -137,21 +152,20 @@
                                 <div class="flex justify-between text-sm font-semibold border-t pt-2"><span>Statutory Deductions:</span> <span>- @statutoryDeductions.ToString("C", culture)</span></div>
                                 <div class="flex justify-between text-sm font-bold border-t pt-2"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
                             </div>
-                        </div>
-
-                        <!-- Summary Section -->
-                        <div class="mt-8 pt-4 border-t-2 border-gray-300">
-                            <div class="flex justify-end">
-                                <div class="w-full md:w-1/2 space-y-2">
-                                    <div class="flex justify-between font-medium"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
-                                    <div class="flex justify-between font-medium"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
-                                    <div class="flex justify-between font-medium"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
-                                    <div class="flex justify-between font-medium"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
-                                    <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Net Pay:</span> <span>@slip.NetPay.ToString("C", culture)</span></div>
                                 </div>
                             </div>
-                            <div class="print-metadata mt-6 text-xs text-gray-500 flex justify-end">
-                                <span>Printed on: <span data-print-timestamp>-</span></span>
+
+                            <!-- Summary Section -->
+                            <div class="mt-8 pt-4 border-t-2 border-gray-300">
+                                <div class="flex justify-end">
+                                    <div class="w-full md:w-1/2 space-y-2">
+                                        <div class="flex justify-between font-medium"><span>Base Pay Earned:</span> <span>@basePayEarned.ToString("C", culture)</span></div>
+                                        <div class="flex justify-between font-medium"><span>Total Additions:</span> <span>@totalAdditions.ToString("C", culture)</span></div>
+                                        <div class="flex justify-between font-medium"><span>Gross Pay:</span> <span>@slip.GrossPay.ToString("C", culture)</span></div>
+                                        <div class="flex justify-between font-medium"><span>Total Deductions:</span> <span>- @slip.TotalDeductions.ToString("C", culture)</span></div>
+                                        <div class="flex justify-between text-xl font-bold text-gray-900 mt-2"><span>Net Pay:</span> <span>@slip.NetPay.ToString("C", culture)</span></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -189,13 +203,25 @@
             }
         }
 
-        .printable-content .print-metadata {
+        .printable-content .print-header {
             display: none;
         }
 
-        .printable-content.print-area .print-metadata,
-        .printable-content.show-print-metadata .print-metadata {
+        .printable-content .print-surface {
+            padding: 0;
+        }
+
+        .printable-content.print-area .print-header,
+        .printable-content.show-print-metadata .print-header {
             display: block;
+        }
+
+        .printable-content.print-area .print-surface,
+        .printable-content.show-print-metadata .print-surface {
+            padding: 24px 28px;
+            margin: 0 auto;
+            max-width: 900px;
+            background: #fff;
         }
     </style>
 
