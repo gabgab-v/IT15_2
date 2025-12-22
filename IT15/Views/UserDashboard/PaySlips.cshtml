@@ -7,7 +7,13 @@
     var search = ViewData["Search"] as string ?? string.Empty;
     var startDate = ViewData["StartDate"] as string ?? string.Empty;
     var endDate = ViewData["EndDate"] as string ?? string.Empty;
-    var printedByName = ViewData["LoggedInUserName"] as string ?? User.Identity?.Name ?? "Current User";
+    Func<string, string> formatDisplayName = raw =>
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "N/A";
+        return raw.Contains("@") ? raw.Split('@')[0] : raw;
+    };
+    var printedByNameRaw = ViewData["LoggedInUserName"] as string ?? User.Identity?.Name ?? "Current User";
+    var printedByName = formatDisplayName(printedByNameRaw);
     var printedByEmail = ViewData["LoggedInUserEmail"] as string ?? string.Empty;
 }
 
@@ -69,12 +75,13 @@
             var basePayEarned = Math.Max(0m, slip.BasicSalary - slip.AbsentDeductions);
             var totalAdditions = slip.OvertimePay;
             var statutoryDeductions = slip.SSSDeduction + slip.PhilHealthDeduction + slip.PagIBIGDeduction + slip.TaxDeduction;
+            var employeeDisplayName = formatDisplayName(slip.Employee?.UserName ?? slip.Employee?.Email ?? "N/A");
             <div id="payslip-container-@slip.Id" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <!-- Payslip Header -->
                     <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900">Pay Slip for @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
-                            <p class="text-sm text-gray-500">Employee: @(slip.Employee?.UserName ?? "N/A") (@(slip.Employee?.Email ?? "N/A"))</p>
+                            <p class="text-sm text-gray-500">Employee: @employeeDisplayName (@(slip.Employee?.Email ?? "N/A"))</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
@@ -97,7 +104,7 @@
                                     <div>
                                         <div class="text-sm font-semibold text-gray-700">OpenBook HRIS</div>
                                         <div class="text-lg font-bold text-gray-900">Payslip - @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</div>
-                                        <div class="text-sm text-gray-600">Employee: @(slip.Employee?.UserName ?? "N/A") (@(slip.Employee?.Email ?? "N/A"))</div>
+                                        <div class="text-sm text-gray-600">Employee: @employeeDisplayName (@(slip.Employee?.Email ?? "N/A"))</div>
                                     </div>
                                     <div class="text-xs text-gray-500 text-right space-y-1">
                                         <div>Printed by</div>
