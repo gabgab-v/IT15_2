@@ -1060,10 +1060,14 @@ namespace IT15.Controllers
         public async Task<IActionResult> PaySlips(string search, DateTime? startDate, DateTime? endDate)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userName = User.Identity?.Name ?? string.Empty;
+            var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
 
             ViewData["Search"] = search;
             ViewData["StartDate"] = startDate?.ToString("yyyy-MM");
             ViewData["EndDate"] = endDate?.ToString("yyyy-MM");
+            ViewData["LoggedInUserName"] = userName;
+            ViewData["LoggedInUserEmail"] = userEmail;
 
             var query = _context.PaySlips
                 .Include(p => p.Payroll)

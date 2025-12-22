@@ -7,6 +7,8 @@
     var search = ViewData["Search"] as string ?? string.Empty;
     var startDate = ViewData["StartDate"] as string ?? string.Empty;
     var endDate = ViewData["EndDate"] as string ?? string.Empty;
+    var printedByName = ViewData["LoggedInUserName"] as string ?? User.Identity?.Name ?? "Current User";
+    var printedByEmail = ViewData["LoggedInUserEmail"] as string ?? string.Empty;
 }
 
 <div class="flex items-center justify-between mb-6">
@@ -72,7 +74,7 @@
                     <div class="flex justify-between items-center pb-4 border-b border-gray-200">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900">Pay Slip for @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</h3>
-                            <p class="text-sm text-gray-500">Employee: @slip.Employee?.Email</p>
+                            <p class="text-sm text-gray-500">Employee: @(slip.Employee?.UserName ?? "N/A") (@(slip.Employee?.Email ?? "N/A"))</p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <button data-payslipid="payslip-@slip.Id" class="print-button bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
@@ -95,10 +97,13 @@
                                     <div>
                                         <div class="text-sm font-semibold text-gray-700">OpenBook HRIS</div>
                                         <div class="text-lg font-bold text-gray-900">Payslip - @slip.Payroll.PayrollMonth.ToString("MMMM yyyy")</div>
-                                        <div class="text-sm text-gray-600">Employee: @(slip.Employee?.UserName ?? slip.Employee?.Email ?? "N/A")</div>
+                                        <div class="text-sm text-gray-600">Employee: @(slip.Employee?.UserName ?? "N/A") (@(slip.Employee?.Email ?? "N/A"))</div>
                                     </div>
-                                    <div class="text-xs text-gray-500 text-right">
-                                        <div>Printed on</div>
+                                    <div class="text-xs text-gray-500 text-right space-y-1">
+                                        <div>Printed by</div>
+                                        <div class="font-semibold text-gray-700">@printedByName</div>
+                                        <div class="text-[11px] text-gray-600">@(!string.IsNullOrWhiteSpace(printedByEmail) ? printedByEmail : "N/A")</div>
+                                        <div class="pt-1">Printed on</div>
                                         <div class="font-medium" data-print-timestamp>-</div>
                                     </div>
                                 </div>
@@ -213,9 +218,11 @@
 
         .printable-content.print-area .print-surface,
         .printable-content.show-print-metadata .print-surface {
-            padding: 24px 28px;
+            box-sizing: border-box;
+            padding: 18mm 20mm;
             margin: 0 auto;
-            max-width: 900px;
+            width: 210mm;
+            max-width: 100%;
             background: #fff;
         }
     </style>
